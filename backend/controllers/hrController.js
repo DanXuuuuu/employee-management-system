@@ -114,5 +114,47 @@ exports.rejectOnboarding = async (req, res, next)=>{
     }catch(error){
         next(error);
     }
+};
+
+// get all employees 
+//  GET /api/hr/employees
+
+exports.getAllEmployees = async(req, res, next)=>{
+    try{
+        const employees = await Employee.find()
+        .populate('user', 'username')
+        // sort by lastname 
+        .sort({ lastName: 1});
+
+        res.status(200).json({
+            success: true,
+            count: employees.length,
+            data: employees
+        })   
+    }catch(error){
+        next(error);
+    }
+};
+// get one employee info specific detail
+//  GET /api/hr/employees/:id
+exports.getEmployeeDetail = async(req, res, next)=>{
+    try{
+        const employee = await Employee.findById(req.params.id)
+        // filled
+        .populate('user', 'username email');
+
+        if(!employee){
+            const err = new Error('Employee not found');
+            err.statusCode = 404;
+            return next(err);
+        }
+        res.status(200).json({
+            success: true,
+            data: employee
+        })
+    }catch(error){
+        next(error)
+;    }   
 }
+
 
