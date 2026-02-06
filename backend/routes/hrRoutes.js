@@ -16,7 +16,7 @@ router.patch('/onboarding/:id/reject', hrController.rejectOnboarding);
 
 // get all employees
 router.get('/employees', hrController.getAllEmployees);
-module.exports = router;
+
 
 // search employee 
 router.get('/employees/search', hrController.searchEmployees);
@@ -27,6 +27,16 @@ router.get('/employees/:id', hrController.getEmployeeDetail);
 
 // get visa in progress 
 router.get('/visa/in-progress', hrController.getVisaInProgress);
+
+// get all employees who need Visa 
+router.get('/visa/all', hrController.getAllVisaEmployees);
+
+// approve/reject visa
+router.patch('/visa/:employeeId/:docType/approve', hrController.approveVisaDoc);
+router.patch('/visa/:employeeId/:docType/reject', hrController.rejectVisaDoc);
+
+// send visa reminder reminder email 
+router.post('/visa/:employeeId/send-reminder', hrController.sendVisaReminder);
 
 module.exports = router;
 
