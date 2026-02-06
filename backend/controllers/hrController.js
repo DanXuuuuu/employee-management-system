@@ -153,8 +153,45 @@ exports.getEmployeeDetail = async(req, res, next)=>{
             data: employee
         })
     }catch(error){
-        next(error)
-;    }   
-}
+        next(error);
+    };
+};
 
+// search employees by firstname lastname preferredname 
+// GET /api/hr/employees/search?q=keyword
+
+exports.searchEmployees = async(req, res, next)=>{
+    try{
+        const { q } = req.query;
+        // undefind/null/""
+        if(!q){
+            const err = new Error('Search query is required');
+            // bad request
+            err.statusCode = 400; 
+            // skip all code after this and to errorHandler 
+            return next(err);
+        }
+        // ignore uppercase and lowercase diff/ case intensitive 
+        const regex = new RegExp(q, 'i');
+        const employees = await Employee.find({
+            // one of them fit is good
+            $or: [
+                { firstName: regex },
+                { lastName: regex },
+                { preferredName: regex }
+            ]
+        })
+        .populate('user', 'username email')
+        .sort({ lastName:1, firstName: 1});
+
+        res.status(200).json({
+            success: true,
+            count: employees.length,
+            data: employees
+        });
+
+    }catch(error){
+        next(error);
+    }
+};
 
