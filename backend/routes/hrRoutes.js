@@ -18,6 +18,10 @@ router.patch('/onboarding/:id/reject', hrController.rejectOnboarding);
 router.get('/employees', hrController.getAllEmployees);
 module.exports = router;
 
+// search employee 
+router.get('/employees/search', hrController.searchEmployees);
+
+
 // get one specific employee 
 router.get('/employees/:id', hrController.getEmployeeDetail);
 
