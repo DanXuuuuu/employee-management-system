@@ -2,6 +2,7 @@ const { application } = require('express');
 const Registration = require('../models/Registration');
 const Employee = require('../models/Employee');
 const Document = require('../models/Document');
+const sendEmail = require('../utils/email');
 
 // get Token History - newest latest 
 
@@ -197,7 +198,7 @@ exports.searchEmployees = async(req, res, next)=>{
 };
 
 
-// get Visa in progress 
+// get Visa in progress, only care the nextstep 
 // GET /api/hr/visa/in-progress
 
 exports.getVisaInProgress = async(req,res, next)=>{
@@ -269,4 +270,167 @@ exports.getVisaInProgress = async(req,res, next)=>{
     }catch(error){
         next(error);
     }
-}
+};
+
+// Approve/Reject visa docs
+// PATCH /api/hr/visa/:employeeId/:docType/approve
+
+exports.approveVisaDoc = async(req, res, next)=>{
+    try{
+        // destructure two paras
+        const {employeeId, docType } = req.params; 
+        //use condition to find
+        const doc = await Document.findOne({
+            owner: employeeId,
+            type: docType,
+            status: 'Pending'
+        });
+        if(!doc){
+            const err = new Error('Document not found or not pending');
+            err.statusCode = 404;
+            return next(err);
+        }
+        // modified 
+        doc.status = 'Approved';
+        doc.feedback = '';
+        // save to db
+        await doc.save();
+        res.status(200).json({
+            success: true,
+            message: `${docType} approved`,
+            data: doc
+        });
+
+    }catch(error){
+        next(error);
+    };
+};
+// reject visa doc
+// PATCH /api/hr/visa/:employeeId/:docType/reject
+exports.rejectVisaDoc = async(req, res, next)=>{
+    try{
+        const { employeeId, docType} = req.params;
+        // get the reason of reject
+        const { feedback } = req.body;
+        if(!feedback){
+            const err = new Error('Feedback is required when rejeecting');
+            err.statusCode = 400;
+            return next(err);
+        }
+        // check must 3 items
+        const doc = await Document.findOne({
+            owner: employeeId,
+            type: docType,
+            status: 'Pending'
+    });
+    // if no file 
+    if (!doc) {
+      const err = new Error('Document not found or not pending');
+      err.statusCode = 404;
+      return next(err);
+    }
+    // modified 
+    doc.status = 'Rejected';
+    // cuz need feedback when rejected 
+    doc.feedback = feedback;
+    doc.save();
+    
+    res.statusCode(200).json({
+        success: true,
+        message: `${docType} rejected`,
+        data: doc
+
+    });
+
+    }catch(error){
+        next(error)
+    };
+};
+
+
+// send visa reminder email 
+exports.sendVisaReminder = async(req, res, next)=>{
+    try{
+        const { employeeId } = req.params;
+        // find the person who need reminder email 
+        const employee = await Employee.findOne({ user: employeeId })
+        .populate('user', 'username email');
+
+        if(!employee){
+            const err = new Error('Employee not found');
+            err.statusCode = 404;
+            return next(err);
+        }
+
+        // sendout reminder email 
+        await sendEmail({
+            email: employee.user.email,
+            subject: 'Reminder: Please Update Your Visa Documents',
+      message: `Hello ${employee.firstName},\n\nThis is a reminder to please upload or update your visa documents as soon as possible.\n\nThank you,\nHR Team`
+        }); 
+        res.status(200).json({
+            success: true,
+             message: `Reminder email sent to ${employee.user.email}`
+        });
+
+    }catch(error){
+        next(error);
+    }
+};
+
+// show all visa employees, cares all detail of everystep 
+//  GET /api/hr/visa/all
+
+exports.getAllVisaEmployees = async(req, res, next)=>{
+    try{
+        const employees = await Employee.find({
+            'residencyStatus.isCitizenOrPermanentResident:': false
+        })
+        .populate('user', 'username email')
+        .sort({ lastName: 1 });
+
+        const results = [];
+        for(const emp of employees){
+            // check this employee all docs
+            const docs = await Document.find({
+                ower: emp.user._id,
+               type: { $in: ['OPT Receipt', 'OPT EAD', 'I-983', 'I-20'] }
+      }).sort({ createdAt: 1 });
+        const docStatus = { };
+        const steps = ['OPT Receipt', 'OPT EAD', 'I-983', 'I-20'];
+
+      for (const step of steps) {
+        // show all the file info:like status .... 
+        const doc = docs.find(d => d.type === step);
+        if (doc) {
+          docStatus[step] = {
+            status: doc.status,
+            feedback: doc.feedback,
+            fileUrl: doc.fileUrl,
+            updatedAt: doc.updatedAt
+          };
+        } else {
+          docStatus[step] = {
+            status: 'Not Uploaded yet',
+            feedback: '',
+            fileUrl: null,
+            updatedAt: null
+          };
+        }
+      }
+
+      results.push({
+        employee: emp,
+        documents: docStatus
+      });
+        }
+        res.status(200).json({
+            success: true,
+            count: results.length,
+            data: results
+        });
+    }catch(error){
+        next(error);
+    }  
+};
+
