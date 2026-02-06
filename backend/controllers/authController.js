@@ -11,7 +11,7 @@ const generateToken = (userId, role) => {
     );
 };
 
-// --- Signup for employee ---
+// --- Register for employee ---
 exports.signup = async (req, res, next) => {
     try {
         const { email, username, password, confirmPassword, registrationToken } = req.body;

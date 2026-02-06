@@ -31,7 +31,8 @@ exports.generateRegistrationToken = async (req, res, next) => {
             token
         });
 
-        const registrationUrl = `${req.protocol}://${req.get('host')}/signup?token=${token}&email=${email}`;
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
+        const registrationUrl = `${frontendUrl}/register?token=${token}&email=${email}`;
         const message = `Hello ${name},\n\nWelcome to the team! 
         Please use the following link to complete your registration:
         \n\n${registrationUrl}\n\nNote: This link is valid for 3 hours only.`;
@@ -60,3 +61,44 @@ exports.generateRegistrationToken = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * verify invite token before showing register page
+ * GET /api/registration/verify?token=xxxx
+ */
+exports.verifyRegistrationToken = async (req, res, next) => {
+    try {
+      const { token } = req.query;
+  
+      if (!token) {
+        return res.status(200).json({
+          valid: false,
+          reason: "missing_token",
+        });
+      }
+  
+      const invite = await Registration.findOne({ token });
+  
+      if (!invite) {
+        return res.status(200).json({
+          valid: false,
+          reason: "expired_or_invalid",
+        });
+      }
+  
+      if (invite.status !== "sent") {
+        return res.status(200).json({
+          valid: false,
+          reason: "already_used",
+        });
+      }
+  
+      return res.status(200).json({
+        valid: true,
+        email: invite.email,
+        name: invite.name,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
