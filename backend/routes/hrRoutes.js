@@ -25,5 +25,8 @@ router.get('/employees/search', hrController.searchEmployees);
 // get one specific employee 
 router.get('/employees/:id', hrController.getEmployeeDetail);
 
+// get visa in progress 
+router.get('/visa/in-progress', hrController.getVisaInProgress);
+
 module.exports = router;
 

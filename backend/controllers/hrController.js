@@ -1,6 +1,7 @@
 const { application } = require('express');
 const Registration = require('../models/Registration');
 const Employee = require('../models/Employee');
+const Document = require('../models/Document');
 
 // get Token History - newest latest 
 
@@ -195,3 +196,77 @@ exports.searchEmployees = async(req, res, next)=>{
     }
 };
 
+
+// get Visa in progress 
+// GET /api/hr/visa/in-progress
+
+exports.getVisaInProgress = async(req,res, next)=>{
+    try{
+        // find employee who needs sponsor 
+        const employees = await Employee.find({
+            'residencyStatus.isCitizenOrPermanentResident': false
+        }).populate('user', 'username email');
+
+        const results = [];
+        // check this employee all files 
+        //const - cuz every round for one different employee (safe and wouldn't change)
+        for(const emp of employees){
+            const docs = await Document.find({
+                owner: emp.user._id,
+                type: {$in: ['OPT Receipt', 'OPT EAD', 'I-983', 'I-20']}
+                // sort by upload time(morning to night) 
+            }).sort({ createdAt: 1});
+            // define progress order
+            const steps = ['OPT Receipt', 'OPT EAD', 'I-983', 'I-20'];
+            let nextStep = steps[0];
+            let currentDoc = null;
+            // find step for all files
+            for(const step of steps){
+                const doc = docs.find(d => d.type === step);
+                if(!doc){
+                    // if no doc
+                    nextStep = `Waiting for ${step} upload`;
+                    break;
+                    // if has docs check status 
+                }else if(doc.status === 'Pending'){
+                    nextStep = `Review ${step}`;
+                    currentDoc = doc;
+                    break;
+                    // if has rejected doc needs reupload 
+                } else if (doc.status === 'Rejected'){
+                    nextStep = `Re-upload ${step}`;
+                    currentDoc = doc;
+                    break;
+                }else if (doc.status === 'Approved'){
+                    nextStep = 'All documents approved';
+                    currentDoc = doc;
+                }
+            }
+            let daysRemaining = null;
+            const endDate = emp.residencyStatus?.workAuthorization?.endDate;
+            if(endDate){
+                const today = new Date();
+                const end = new Date(endDate);
+                // calculate left days
+                daysRemaining = Math.ceil((end - today)/(1000*60*60*24));
+            }
+            // all passed employee doesnt show here 
+            if(nextStep !== 'All documents approved'){
+                results.push({
+                    employee: emp,
+                    nextStep,
+                    currentDoc,
+                    daysRemaining
+                });
+            }
+
+        }
+        res.status(200).json({
+            success: true,
+            count: results.length,
+            data: results
+        })
+    }catch(error){
+        next(error);
+    }
+}
