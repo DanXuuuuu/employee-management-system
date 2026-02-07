@@ -378,7 +378,7 @@ exports.sendVisaReminder = async(req, res, next)=>{
     }
 };
 
-// show all visa employees, cares all detail of everystep 
+// show all visa employees, cares all detail of everystep  
 //  GET /api/hr/visa/all
 
 exports.getAllVisaEmployees = async(req, res, next)=>{
