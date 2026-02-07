@@ -5,6 +5,8 @@ const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 const authRoutes = require('./routes/authRoutes');
 const registrationRoutes = require('./routes/registrationRoutes')
+const onboardingRoutes = require("./routes/onboardingRoutes");
+const documentRoutes = require("./routes/documentRoutes");
 
 dotenv.config();
 
@@ -21,7 +23,8 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes)
-
+app.use("/api/onboarding", onboardingRoutes);
+app.use('/apidocuments', documentRoutes);
 // error middleware (must be last)
 app.use(errorHandler);
 
