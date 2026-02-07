@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import MainLayout from '../src/components/layout/MainLayout';
 import Register from "./pages/Register";
 import HiringManagement from './pages/hr/HiringManagement';
+import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         {/* HR pages */}
         <Route element={<MainLayout/> }>
             <Route path='/hr/hiring' element={<HiringManagement />} />
+            <Route path='/hr/employees' element={<EmployeeProfiles />}/>
         </Route>
 
         {/* Protected */}
