@@ -16,4 +16,9 @@ router.post('/upload-avatar', protect, upload.single('profilePic'), (req, res) =
     });
 });
 
+const { getOnboarding } = require("../controllers/onboardingController");
+const { protect } = require("../middleware/authMiddleware"); 
+// GET /api/onboarding
+router.get("/", protect, getOnboarding);
+
 module.exports = router;
