@@ -7,6 +7,8 @@ const authRoutes = require('./routes/authRoutes');
 const registrationRoutes = require('./routes/registrationRoutes')
 const path = require('path');
 const onboardingRoutes = require('./routes/onboardingRoutes');
+const hrRoutes = require('./routes/hrRoutes')
+
 
 dotenv.config();
 
@@ -25,6 +27,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/onboarding', onboardingRoutes);
+// manage to hrRoutes
+app.use('/api/hr', hrRoutes);
+
+
 
 // error middleware (must be last)
 app.use(errorHandler);
