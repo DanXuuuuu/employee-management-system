@@ -6,6 +6,7 @@ import MainLayout from '../src/components/layout/MainLayout';
 import Register from "./pages/Register";
 import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
+import VisaManagement from './pages/hr/VisaManagement';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route element={<MainLayout/> }>
             <Route path='/hr/hiring' element={<HiringManagement />} />
             <Route path='/hr/employees' element={<EmployeeProfiles />}/>
+            <Route path='/hr/visa' element={<VisaManagement/>}/>
         </Route>
 
         {/* Protected */}
