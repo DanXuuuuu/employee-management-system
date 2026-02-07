@@ -11,6 +11,10 @@ const documentSchema = new mongoose.Schema({
         required: true,
         enum: ['OPT Receipt', 'OPT EAD', 'I-983', 'I-20', 'Driver License', 'Work Authorization'] // 涵盖所有文件类型
     },
+    fileName: {
+        type: String,
+        required: true
+      },
     fileUrl: {
         type: String,
         required: true
