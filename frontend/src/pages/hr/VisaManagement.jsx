@@ -71,7 +71,7 @@ return (
         Visa Status Management
       </h1>
 
-      {/* ====== Tab 切换按钮 ====== */}
+      {/* change tab */}
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab('in-progress')}
@@ -95,7 +95,7 @@ return (
         </button>
       </div>
 
-      {/* ====== In Progress Tab ====== */}
+      {/* In Progress Tab  */}
       {activeTab === 'in-progress' && (
         <div className="bg-white rounded-lg shadow p-6">
           <table className="w-full text-sm text-left">
@@ -181,7 +181,7 @@ return (
         </div>
       )}
 
-      {/* ====== All Employees Tab ====== */}
+      {/*  All Employees Tab  */}
       {activeTab === 'all' && (
         <div className="bg-white rounded-lg shadow p-6">
           <table className="w-full text-sm text-left">
