@@ -174,7 +174,10 @@ exports.searchEmployees = async(req, res, next)=>{
             return next(err);
         }
         // ignore uppercase and lowercase diff/ case intensitive 
-        const regex = new RegExp(q, 'i');
+        // avoid regex erro
+        const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedQ, 'i');
+
         const employees = await Employee.find({
             // one of them fit is good
             $or: [
