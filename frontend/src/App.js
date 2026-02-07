@@ -2,7 +2,10 @@
 import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import MainLayout from '../src/components/layout/MainLayout';
 import Register from "./pages/Register";
+import HiringManagement from './pages/hr/HiringManagement';
+
 function App() {
   return (
     <BrowserRouter>
@@ -12,6 +15,11 @@ function App() {
         {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* HR pages */}
+        <Route element={<MainLayout/> }>
+            <Route path='/hr/hiring' element={<HiringManagement />} />
+        </Route>
 
         {/* Protected */}
         {/* <Route element={<ProtectedRoute />}> */}
