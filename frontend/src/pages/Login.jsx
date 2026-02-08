@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 
 import AuthPage from "../components/auth/AuthPage";
 import AuthCard from "../components/auth/AuthCard";
@@ -9,10 +9,11 @@ import Button from "../components/ui/Button";
 import { login, clearSignInError, logout } from "../store/authSlice";
 
 export default function Login() {
-  const navigate = useNavigate();
+ 
   const dispatch = useDispatch();
   const { isAuthenticated, user, signIn } = useSelector((s) => s.auth);
 
+ 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setLocalError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
