@@ -55,18 +55,17 @@ const userSchema = new mongoose.Schema({
     }
 
 );
-userSchema.pre('save', async function(next){
 
-    if(!this.isModified('password')) return next();
-    //use salt to encrypt the password
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (err) {
-        next(err);
-    }
+userSchema.pre('save', async function () {
+  // if password no changed no hash 
+  if (!this.isModified('password')) return;
+ //use salt to encrypt the password
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
+// mongoose will throw if error 
+// and dont use next() here, be safe. 
+
 
 // this is verify for check the content of login
 userSchema.methods.comparePassword = async function(candidatePassword){
