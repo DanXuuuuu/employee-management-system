@@ -32,11 +32,11 @@ router.get('/visa/in-progress', hrController.getVisaInProgress);
 router.get('/visa/all', hrController.getAllVisaEmployees);
 
 // approve/reject visa
-router.patch('/visa/:employeeId/:docType/approve', hrController.approveVisaDoc);
-router.patch('/visa/:employeeId/:docType/reject', hrController.rejectVisaDoc);
+router.patch('/visa/:userId/:docType/approve', hrController.approveVisaDoc);
+router.patch('/visa/:userId/:docType/reject', hrController.rejectVisaDoc);
 
 // send visa reminder reminder email 
-router.post('/visa/:employeeId/send-reminder', hrController.sendVisaReminder);
+router.post('/visa/:userId/send-reminder', hrController.sendVisaReminder);
 
 module.exports = router;
 

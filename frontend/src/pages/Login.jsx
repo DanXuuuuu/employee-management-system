@@ -1,24 +1,19 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 
 import AuthPage from "../components/auth/AuthPage";
 import AuthCard from "../components/auth/AuthCard";
 import TextField from "../components/ui/TextField";
 import Button from "../components/ui/Button";
-import login from "../store/authSlice";
+import {login} from "../store/authSlice";
 
 export default function Login() {
-  const navigate = useNavigate();
+ 
   const dispatch = useDispatch();
-  const { isAuthenticated} = useSelector((s) => s.auth);
-
+ 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setLocalError] = useState("");
-
-  useEffect(() => {
-    if (isAuthenticated) navigate("/personal-info");
-  }, [isAuthenticated, navigate]);
 
   const onChange = (e) => {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
