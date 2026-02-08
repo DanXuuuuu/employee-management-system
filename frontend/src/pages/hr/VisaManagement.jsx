@@ -18,8 +18,9 @@ export default function VisaManagement(){
     // fetch In progress visa employees
     const fetchInProgress = async()=>{
         try{
-
-        }catch(err){
+            const res = await api.get('/hr/visa/in-progress');
+            setInProgress(res.data.data);
+        } catch (err) {
             console.error('Failed to fetch in-progress:', err);
         }
     };
