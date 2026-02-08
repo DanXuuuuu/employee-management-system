@@ -21,7 +21,7 @@ export const login = createAsyncThunk(
     "auth/login",
     async ({ email, password }, { rejectWithValue }) => {
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch("api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -49,16 +49,16 @@ export const login = createAsyncThunk(
     "auth/signup",
     async ({ token, username, email, password,confirmPassword }, { rejectWithValue }) => {
       try {
-        const res = await fetch(`/api/auth/register`, {
+        const res = await fetch(`/api/auth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, username, email, password,confirmPassword }),
+          body: JSON.stringify({ registrationToken: token, username, email, password, confirmPassword }),
         });
   
         const data = await res.json().catch(() => ({}));
   
         if (!res.ok) {
-          return rejectWithValue(data?.message || "Registration failed");
+          return rejectWithValue(data?.error || data?.message || "Registration failed");
         }
         return { message: data?.message || "Registration completed. Please login." }; // { success:true, message }
       } catch (e) {

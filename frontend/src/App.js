@@ -8,6 +8,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
+import HrHome from './pages/hr/HrHome';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
 
         {/* HR pages */}
         <Route element={<MainLayout/> }>
+            <Route path='/hr/home' element={<HrHome />} />
             <Route path='/hr/hiring' element={<HiringManagement />} />
             <Route path='/hr/employees' element={<EmployeeProfiles />}/>
             <Route path='/hr/visa' element={<VisaManagement/>}/>

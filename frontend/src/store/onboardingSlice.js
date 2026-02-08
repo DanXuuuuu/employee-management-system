@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-const BASE_URL = "http://localhost:3001"; 
+const BASE_URL = "http://localhost:8080"; 
 
 const pickErrorMessage = (payload, fallback) => {
     if (!payload) return fallback;
