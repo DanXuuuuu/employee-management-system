@@ -6,6 +6,7 @@ export default function VisaManagement(){
     const [activeTab, setActiveTab] = useState('in-progress');
     const [inProgress, setInProgress] = useState([]);
     const [allVisa, setAllVisa] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
 
     // fetch data when page loading 
@@ -65,12 +66,33 @@ export default function VisaManagement(){
             console.error('Failed to send reminder:', err);
         }
     };
+    // search filter - frontend filter 
+    const filterBySearch = (items) => {
+        if (!searchQuery.trim()) return items;
+        const q = searchQuery.toLowerCase();
+        return items.filter((item) =>
+      `${item.employee.firstName} ${item.employee.lastName}`.toLowerCase().includes(q)
+    );
+  };
+
+  const filteredInProgress = filterBySearch(inProgress);
+  const filteredAllVisa = filterBySearch(allVisa);
 
 return (
      <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">
         Visa Status Management
       </h1>
+        {/* Search Bar */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name..."
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+        />
+      </div>
 
       {/* change tab */}
       <div className="flex gap-2 mb-6">
@@ -82,7 +104,7 @@ return (
               : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
           }`}
         >
-          In Progress ({inProgress.length})
+          In Progress ({filteredInProgress.length})
         </button>
         <button
           onClick={() => setActiveTab('all')}
@@ -92,7 +114,7 @@ return (
               : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
           }`}
         >
-          All Employees ({allVisa.length})
+          All Employees ({filteredAllVisa.length})
         </button>
       </div>
 
@@ -110,14 +132,14 @@ return (
               </tr>
             </thead>
             <tbody>
-              {inProgress.length === 0 ? (
+            {filteredInProgress.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-4 py-3 text-center text-gray-400">
                     No employees in progress
                   </td>
                 </tr>
               ) : (
-                inProgress.map((item) => (
+            filteredInProgress.map((item) => (
                   <tr key={item.employee._id} className="border-t">
                     <td className="px-4 py-2">
                       {item.employee.firstName} {item.employee.lastName}
@@ -196,14 +218,14 @@ return (
               </tr>
             </thead>
             <tbody>
-              {allVisa.length === 0 ? (
+              {filteredAllVisa.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-4 py-3 text-center text-gray-400">
                     No visa employees found
                   </td>
                 </tr>
               ) : (
-                allVisa.map((item) => (
+                filteredAllVisa.map((item) => (
                   <tr key={item.employee._id} className="border-t">
                     <td className="px-4 py-2">
                       {item.employee.firstName} {item.employee.lastName}
