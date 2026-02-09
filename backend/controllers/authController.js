@@ -12,77 +12,76 @@ const generateToken = (userId, role) => {
 };
 
 // --- Register for employee ---
+
 exports.signup = async (req, res, next) => {
-    try {
-        const { email, username, password, confirmPassword, registrationToken } = req.body;
+  try {
+    const { email, username, password, confirmPassword, registrationToken, token } = req.body;
+    const regToken = registrationToken || token; // ✅ 兼容两种字段名
 
-
-        if (!email || !username || !password || !confirmPassword || !registrationToken) {
-            const err = new Error('Please fill in all fields, including the registration token');
-            err.statusCode = 400;
-            return next(err);
-        }
-
-     
-        if (password !== confirmPassword) {
-            const err = new Error('Passwords do not match');
-            err.statusCode = 400;
-            return next(err);
-        }
-        /*
-        console.log('--- DEBUG START ---');
-        console.log('Request Email:', `"${email}"`);
-        console.log('Request Token:', `"${registrationToken}"`);
-        console.log('--- DEBUG END ---');
-        */
-        const validToken = await Registration.findOne({ 
-            token: registrationToken, 
-            email: email, 
-            status: 'sent' 
-        });
-
-        if (!validToken) {
-            const err = new Error('Invalid or expired registration link. Please contact HR.');
-            err.statusCode = 401;
-            return next(err);
-        }
-
-      
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-        if (existingUser) {
-            const err = new Error('User email or username already exists');
-            err.statusCode = 400;
-            return next(err);
-        }
-
-     
-        const newUser = new User({
-            email,
-            username,
-            password
-        });
-
-        await newUser.save();
-
-        validToken.status = 'used';
-        await validToken.save();
-
-  
-        const token = generateToken(newUser._id, newUser.role);
-        res.status(201).json({
-            success: true,
-            message: 'Registration successful',
-            token,
-            user: {
-                id: newUser._id,
-                username: newUser.username,
-                role: newUser.role
-            }
-        });
-
-    } catch (error) {
-        next(error);
+    // ✅ 必填校验
+    if (!email || !username || !password || !confirmPassword || !regToken) {
+      const err = new Error('Please fill in all fields, including the registration token');
+      err.statusCode = 400;
+      return next(err);
     }
+
+    // ✅ 密码一致校验
+    if (password !== confirmPassword) {
+      const err = new Error('Passwords do not match');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    // ✅ 验证注册链接 token 是否存在且未使用
+    const validToken = await Registration.findOne({
+      token: regToken,
+      email: email,
+      status: 'sent',
+    });
+
+    if (!validToken) {
+      const err = new Error('Invalid or expired registration link. Please contact HR.');
+      err.statusCode = 401;
+      return next(err);
+    }
+
+    // ✅ 检查用户是否已存在
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      const err = new Error('User email or username already exists');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    // ✅ 创建用户
+    const newUser = new User({
+      email,
+      username,
+      password,
+    });
+
+    await newUser.save();
+
+    // ✅ 标记 token 已使用
+    validToken.status = 'used';
+    await validToken.save();
+
+    // ✅ 返回登录 token（注意别和 req.body 的 token 同名冲突）
+    const authToken = generateToken(newUser._id, newUser.role);
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful',
+      token: authToken,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // --- Login logic ---

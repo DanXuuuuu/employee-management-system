@@ -16,7 +16,7 @@ async function seed() {
   console.log("Seeding dev employees...");
 
   // clean old seed data
-  await Employee.deleteMany({ hrFeedback: "DEV_SEED" });
+  await Employee.deleteMany({ email: /seed\d+@test\.com/ });
   await User.deleteMany({ email: /seed\d+@test\.com/ });
   await Document.deleteMany({ fileUrl: /DEV_SEED/ }); // safe cleanup marker
 
@@ -79,35 +79,73 @@ async function seed() {
       },
     ],
     applicationStatus: appStatuses[i],
-    hrFeedback: appStatuses[i] === "Rejected" ? "DEV_SEED: not good" : "DEV_SEED",
+    hrFeedback: appStatuses[i] === "Rejected" ? "Does not meet requirements" : "",
   }));
 
   const employees = await Employee.insertMany(employeesPayloads);
  
   const steps = ["OPT Receipt", "OPT EAD", "I-983", "I-20"];
-
   const DEV_FILE = (name) => `https://example.com/DEV_SEED/${name}.pdf`;
+  const DEV_FILE_KEY = (name) => `DEV_SEED/${name}.pdf`;
 
   const docs = [
     // user1
-    { owner: users[0]._id, type: "OPT Receipt", status: "Approved", feedback: "", fileUrl: DEV_FILE("u1_opt_receipt") },
-    { owner: users[0]._id, type: "OPT EAD", status: "Pending", feedback: "", fileUrl: DEV_FILE("u1_opt_ead") },
+    {
+      owner: users[0]._id,
+      type: "OPT Receipt",
+      status: "Approved",
+      feedback: "",
+      fileUrl: DEV_FILE("u1_opt_receipt"),
+      fileKey: DEV_FILE_KEY("u1_opt_receipt"),
+    },
+    {
+      owner: users[0]._id,
+      type: "OPT EAD",
+      status: "Pending",
+      feedback: "",
+      fileUrl: DEV_FILE("u1_opt_ead"),
+      fileKey: DEV_FILE_KEY("u1_opt_ead"),
+    },
 
     // user2
-    { owner: users[1]._id, type: "OPT Receipt", status: "Approved", feedback: "", fileUrl: DEV_FILE("u2_opt_receipt") },
-    { owner: users[1]._id, type: "OPT EAD", status: "Rejected", feedback: "DEV_SEED: blurry", fileUrl: DEV_FILE("u2_opt_ead") },
+    {
+      owner: users[1]._id,
+      type: "OPT Receipt",
+      status: "Approved",
+      feedback: "",
+      fileUrl: DEV_FILE("u2_opt_receipt"),
+      fileKey: DEV_FILE_KEY("u2_opt_receipt"),
+    },
+    {
+      owner: users[1]._id,
+      type: "OPT EAD",
+      status: "Rejected",
+      feedback: "blurry", 
+      fileUrl: DEV_FILE("u2_opt_ead"),
+      fileKey: DEV_FILE_KEY("u2_opt_ead"),
+    },
 
     // user4
-    { owner: users[3]._id, type: "OPT Receipt", status: "Pending", feedback: "", fileUrl: DEV_FILE("u4_opt_receipt") },
+    {
+      owner: users[3]._id,
+      type: "OPT Receipt",
+      status: "Pending",
+      feedback: "",
+      fileUrl: DEV_FILE("u4_opt_receipt"),
+      fileKey: DEV_FILE_KEY("u4_opt_receipt"),
+    },
   ];
 
   // Only insert if actually have Document model
   if (Document) { 
     await Document.insertMany(
-      docs.map((d) => ({
-        ...d,
-        // keep types in allowed list
+      docs.map((d) => ({  
+        owner: d.owner,
         type: steps.includes(d.type) ? d.type : "OPT Receipt",
+        status: d.status,
+        feedback: d.feedback || "",
+        fileUrl: d.fileUrl,
+        fileKey: `DEV_SEED/${d.owner}_${d.type}.pdf`,
       }))
     );
   }

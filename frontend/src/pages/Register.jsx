@@ -39,8 +39,10 @@ export default function Register() {
 
   useEffect(() => {
     if (signUp.success) {
+
+      // if login succuss go to portal - could be replaced later
+      navigate("/employee/visa");
       dispatch(clearSignUpStatus());
-      navigate("/login");
     }
   }, [signUp.success, dispatch, navigate]);
 

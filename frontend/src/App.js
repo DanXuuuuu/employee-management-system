@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 function App() {
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const role = user?.role;
+  // could modified after cuz that "/employee/profile"  - divided employee / hr 
   const postLoginPath = role === "HR" ? "/hr/hiring": role === "Employee" ? "/employee/visa" : "/login";
 
   return (
