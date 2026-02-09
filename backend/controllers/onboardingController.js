@@ -1,109 +1,79 @@
 const Employee = require("../models/Employee");
-const Document = require("../models/Document");
 
 /**
  * GET /api/onboarding
- * Minimal contract:
- * - If employee not found: return status NOT_STARTED, employee null
- * - Always return documents array (may be empty)
  */
 exports.getOnboarding = async (req, res, next) => {
-  try {
-    const userId = req.user._id;
+    try {
+        const userId = req.user.id;
+        const userEmail = req.user.email; // 从 JWT 获取原始 email
 
-    const employee = await Employee.findOne({ user: userId });
-    const documents = await Document.find({ owner: userId })
-      .sort({ createdAt: -1 })
-      .select("_id type status feedback fileUrl fileKey fileName createdAt updatedAt");
+        const employee = await Employee.findOne({ user: userId }).populate('documents');
 
-    // employee 可能不存在（Not Started）
-    const status = employee?.applicationStatus || "NOT_STARTED";
-    const hrFeedback = employee?.hrFeedback || "";
+        // 计算状态
+        let status = "Never Submitted";
+        if (employee) status = employee.applicationStatus;
 
-    return res.json({
-      ok: true,
-      data: {
-        status,
-        hrFeedback,
-        employee: employee ? employee.toObject() : null,
-        documents: documents.map((d) => d.toObject())
-      }
-    });
-  } catch (err) {
-    next(err);
-  }
+        res.status(200).json({
+            ok: true,
+            data: {
+                status,
+                hrFeedback: employee ? employee.hrFeedback : "",
+                // 如果是第一次进入，返回一个带有 email 的空对象供前端渲染
+                employee: employee || { email: userEmail }, 
+                documents: employee ? employee.documents : []
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 /**
  * POST /api/onboarding/submit
- * - 允许：NOT_STARTED / REJECTED / employee 不存在
- * - 禁止：PENDING / APPROVED
- * - 行为：保存 employee payload，然后状态设为 PENDING，清空 hrFeedback
- *
- * Body: { employee: {...} }
  */
 exports.submitOnboarding = async (req, res, next) => {
     try {
-      const userId = req.user._id;
-      const payload = req.body?.employee;
-  
-      if (!payload) {
-        return res.status(400).json({
-          ok: false,
-          message: "Missing employee payload. Expected { employee: {...} }",
+        const { employee } = req.body;
+        const userId = req.user.id;
+        const userEmail = req.user.email; // 获取可靠的 email 源
+
+        if (!employee) {
+            return res.status(400).json({ ok: false, message: "No data provided" });
+        }
+
+        // 状态检查逻辑保持不变...
+        const existing = await Employee.findOne({ user: userId });
+        if (existing && (existing.applicationStatus === 'PENDING' || existing.applicationStatus === 'APPROVED')) {
+            return res.status(403).json({ ok: false, message: "Forbidden: Status is Pending or Approved" });
+        }
+
+        // 核心修复：构造数据，强制补齐 email 和 user ID
+        const updateData = {
+            ...employee,
+            user: userId,
+            email: userEmail, // 解决 "email is required" 验证报错
+            applicationStatus: 'PENDING',
+            hrFeedback: '',
+            lastUpdated: Date.now()
+        };
+
+        const updatedEmployee = await Employee.findOneAndUpdate(
+            { user: userId },
+            updateData,
+            { new: true, upsert: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            ok: true,
+            data: {
+                status: updatedEmployee.applicationStatus,
+                hrFeedback: updatedEmployee.hrFeedback,
+                employee: updatedEmployee
+            }
         });
-      }
-  
-      let employee = await Employee.findOne({ user: userId });
-      const currentStatus = employee?.applicationStatus || "NOT_STARTED";
-  
-      // 状态 gate
-      if (currentStatus === "PENDING") {
-        return res.status(409).json({ ok: false, message: "Already pending." });
-      }
-      if (currentStatus === "APPROVED") {
-        return res.status(409).json({ ok: false, message: "Already approved." });
-      }
-  
-      // email 锁死：来自 employee（已存在）或登录用户（如果你 auth 有 email）
-      const lockedEmail = employee?.email || req.user.email;
-      if (!lockedEmail) {
-        return res.status(400).json({
-          ok: false,
-          message: "Invite email is missing. Cannot submit onboarding.",
-        });
-      }
-  
-      // create or update
-      if (!employee) {
-        employee = await Employee.create({
-          ...payload,
-          user: userId,
-          email: lockedEmail,
-          applicationStatus: "PENDING",
-          hrFeedback: "",
-        });
-      } else {
-        employee.set({
-          ...payload,
-          user: userId,
-          email: lockedEmail,
-          applicationStatus: "PENDING",
-          hrFeedback: "",
-        });
-        await employee.save();
-      }
-  
-      return res.status(200).json({
-        ok: true,
-        data: {
-          status: employee.applicationStatus,
-          hrFeedback: employee.hrFeedback || "",
-          employee: employee.toObject(),
-        },
-        message: "Submitted. Status set to PENDING.",
-      });
-    } catch (err) {
-      next(err);
+    } catch (error) {
+        console.error("Submit Error Details:", error.message);
+        next(error);
     }
-  };
+};

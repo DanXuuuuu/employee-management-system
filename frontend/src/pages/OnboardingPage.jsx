@@ -54,7 +54,22 @@ export default function OnboardingPage() {
     uploadStatusByType, // { [type]: "idle"|"uploading"|"succeeded"|"failed" }
     uploadErrorByType,
     form,
+    employee,
   } = useSelector((s) => s.onboarding);
+  useEffect(() => {
+    // 当获取成功且后端返回了 employee 数据时
+    if (status === "succeeded" && employee) {
+      // 自动填充 Email (from invite)
+      if (employee.email && !form.email) {
+        dispatch(setField({ name: "email", value: employee.email }));
+      }
+      
+      // 如果后端已经有保存过的名字，也可以在此处同步
+      if (employee.firstName && !form.firstName) {
+        dispatch(setField({ name: "firstName", value: employee.firstName }));
+      }
+    }
+  }, [status, employee, dispatch, form.email, form.firstName]);
 
   useEffect(() => {
     dispatch(fetchOnboarding());
@@ -119,13 +134,26 @@ export default function OnboardingPage() {
 
   const handlePreview = (doc) => () => {
     if (!doc?.fileUrl) return;
-    window.open(doc.fileUrl, "_blank", "noopener,noreferrer");
+    // 必须拼接后端 8080 端口的完整地址，否则浏览器会在 3000 端口下找文件
+    const fullUrl = `http://localhost:8080${doc.fileUrl}`; 
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleDownload = (doc) => () => {
-    if (!doc?.fileUrl) return;
-    window.open(doc.fileUrl, "_blank", "noopener,noreferrer");
-  };
+  if (!doc?.fileUrl) return;
+
+  const fullUrl = `http://localhost:8080${doc.fileUrl}`;
+ 
+  const link = document.createElement('a');
+  link.href = fullUrl;
+
+  link.setAttribute('download', `${doc.type.replace(/\s+/g, '_')}_${doc.fileName}`);
+  
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+};
 
   const onSubmit = () => {
     dispatch(submitOnboarding());

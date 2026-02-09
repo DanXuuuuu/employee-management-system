@@ -89,6 +89,10 @@ const employeeSchema = new mongoose.Schema({
             endDate: Date
         }
     },
+    documents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Document' 
+    }],
 
     reference: {
         firstName: String,
@@ -131,7 +135,7 @@ const employeeSchema = new mongoose.Schema({
         default: 'NOT_STARTED'
       },
       
-    hrFeedback: String
+    hrFeedback: { type: String, default: "" }
 
 }, 
     { timestamps: true });

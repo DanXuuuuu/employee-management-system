@@ -3,6 +3,10 @@ const router = express.Router();
 const upload = require('../middleware/upload'); 
 const { protect } = require('../middleware/authMiddleware');
 
+const { 
+    getOnboarding, 
+    submitOnboarding 
+} = require("../controllers/onboardingController");
 
 router.post('/upload-avatar', protect, upload.single('profilePic'), (req, res) => {
     if (!req.file) {
@@ -16,9 +20,11 @@ router.post('/upload-avatar', protect, upload.single('profilePic'), (req, res) =
     });
 });
 
-const { getOnboarding } = require("../controllers/onboardingController");
 
 // GET /api/onboarding
 router.get("/", protect, getOnboarding);
+
+// POST /api/onboarding/submit
+router.post("/submit", protect, submitOnboarding);
 
 module.exports = router;

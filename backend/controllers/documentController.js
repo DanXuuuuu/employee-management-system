@@ -1,4 +1,7 @@
 const Document = require("../models/Document");
+const Employee = require('../models/Employee');
+const fs = require('fs');
+const path = require('path');
 
 const ALLOWED_TYPES = [
   "OPT Receipt",
@@ -19,8 +22,8 @@ exports.getMyDocuments = async (req, res, next) => {
     const docs = await Document.find({ owner: userId }).sort({ createdAt: -1 });
 
     res.json({
-      ok: true,
-      data: docs.map((d) => d.toObject()),
+      success: true,
+      data: docs
     });
   } catch (err) {
     next(err);
@@ -41,46 +44,47 @@ exports.uploadDocument = async (req, res, next) => {
     const userId = req.user._id;
     const { type } = req.body;
 
+    // 1. 校验参数
     if (!type || !ALLOWED_TYPES.includes(type)) {
-      return res.status(400).json({
-        ok: false,
-        message: "Invalid document type.",
-      });
+      return res.status(400).json({ success: false, message: "Invalid document type." });
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        ok: false,
-        message: "File is required.",
-      });
+      return res.status(400).json({ success: false, message: "File is required." });
     }
 
-    // 如果你已经加了 owner+type unique index：
-    // - 建议这里禁止重复创建（让用户用 PUT 走 reupload）
+    // 2. 检查是否已存在同类型文档（防止重复 POST，重复应走 PUT）
     const existing = await Document.findOne({ owner: userId, type });
     if (existing) {
       return res.status(409).json({
-        ok: false,
-        message: "This document type already exists. Use reupload endpoint if rejected.",
+        success: false,
+        message: "This document already exists. Please use the re-upload endpoint if it was rejected."
       });
     }
 
+    // 3. 创建数据库记录
     const fileUrl = `/uploads/${req.file.filename}`;
-
     const doc = await Document.create({
       owner: userId,
       type,
       fileUrl,
-      fileKey: req.file.filename, // 本地就用文件名当 key
-      fileName: req.file.originalname, // 你需要在 Document schema 里加 fileName
-      status: "Pending",
+      fileKey: req.file.filename,
+      fileName: req.file.originalname,
+      status: "Pending", // 初始状态均为 Pending
       feedback: "",
     });
 
+    // 4. 重要：同步关联到 Employee 模型，确保 HR 可见
+    await Employee.findOneAndUpdate(
+      { user: userId },
+      { $addToSet: { documents: doc._id } },
+      { upsert: true } // 如果 Employee 记录尚未创建则自动创建
+    );
+
     return res.status(201).json({
-      ok: true,
-      data: doc.toObject(),
-      message: "Uploaded. Status is Pending.",
+      success: true,
+      data: doc,
+      message: "Document uploaded successfully. Status is now Pending."
     });
   } catch (err) {
     next(err);
@@ -89,8 +93,7 @@ exports.uploadDocument = async (req, res, next) => {
 
 /**
  * PUT /api/documents/:id
- * - 只允许：自己的文档 + 状态是 Rejected
- * - 行为：替换 fileUrl/fileKey/fileName，status -> Pending，feedback 清空
+ * 重新上传被 HR 拒绝的文档
  */
 exports.reuploadDocument = async (req, res, next) => {
   try {
@@ -98,36 +101,44 @@ exports.reuploadDocument = async (req, res, next) => {
     const { id } = req.params;
 
     if (!req.file) {
-      return res.status(400).json({
-        ok: false,
-        message: "File is required.",
-      });
+      return res.status(400).json({ success: false, message: "New file is required." });
     }
 
+    // 1. 查找旧文档记录并验证所有权
     const doc = await Document.findOne({ _id: id, owner: userId });
     if (!doc) {
-      return res.status(404).json({ ok: false, message: "Document not found." });
+      return res.status(404).json({ success: false, message: "Document not found." });
     }
 
+    // 2. 状态校验：只有 Rejected 的文档允许重新上传
     if (doc.status !== "Rejected") {
       return res.status(409).json({
-        ok: false,
-        message: "Only rejected documents can be re-uploaded.",
+        success: false,
+        message: "Only rejected documents can be re-uploaded."
       });
     }
 
+    // 3. 物理删除服务器上的旧文件（可选优化）
+    if (doc.fileKey) {
+      const oldPath = path.join(__dirname, '../uploads', doc.fileKey);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // 4. 更新数据库记录并重置状态
     doc.fileUrl = `/uploads/${req.file.filename}`;
     doc.fileKey = req.file.filename;
     doc.fileName = req.file.originalname;
-    doc.status = "Pending";
-    doc.feedback = "";
+    doc.status = "Pending"; // 重置为 Pending 等待重新审核
+    doc.feedback = ""; // 清空之前的拒绝反馈
 
     await doc.save();
 
     return res.json({
-      ok: true,
-      data: doc.toObject(),
-      message: "Re-uploaded. Status reset to Pending.",
+      success: true,
+      data: doc,
+      message: "Document re-uploaded. Status has been reset to Pending."
     });
   } catch (err) {
     next(err);
