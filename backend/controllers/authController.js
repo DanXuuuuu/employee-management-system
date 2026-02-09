@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Registration = require('../models/Registration'); 
 const jwt = require('jsonwebtoken');
-
+const Employee = require('../models/Employee');
 
 const generateToken = (userId, role) => {
     return jwt.sign(
@@ -112,6 +112,13 @@ exports.login = async (req, res, next) => {
             return next(err);
         }
 
+        let applicationStatus = 'Not Started'; 
+        if (user.role === 'Employee') {
+            const employeeProfile = await Employee.findOne({ user: user._id });
+            if (employeeProfile) {
+                applicationStatus = employeeProfile.applicationStatus;
+            }
+        }
      
         const token = generateToken(user._id, user.role);
 
@@ -123,7 +130,8 @@ exports.login = async (req, res, next) => {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                role: user.role 
+                role: user.role,
+                applicationStatus: applicationStatus
             }
         });
 

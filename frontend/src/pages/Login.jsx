@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useEffect, navigate } from "react";
+import { useDispatch, useSelector} from "react-redux";
 
 import AuthPage from "../components/auth/AuthPage";
 import AuthCard from "../components/auth/AuthCard";
@@ -18,18 +18,24 @@ export default function Login() {
   const [error, setLocalError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // 核心修复：根据角色跳转
   useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.role === 'HR') {
-        navigate("/hr/home"); // 文档要求的 HR 首页
-      } else {
-        // 如果是非 HR 账号，给个提示或者直接退出
-        alert("Employee side is currently disabled for maintenance.");
-        dispatch(logout()); // 强制登出防止卡在白屏
-      }
+  if (isAuthenticated && user) {
+    // 1. HR 角色分流
+    if (user.role === 'HR') {
+      navigate("/hr/home");
+      return;
     }
-  }, [isAuthenticated, user, navigate, dispatch]);
+
+    // 2. Employee 状态检查
+    // 只有当 applicationStatus 明确为 'Approved' 时，才允许进入主页
+    if (user.applicationStatus === 'Approved') {
+      navigate("/personal-info"); // 文档要求的登录后首页面
+    } else {
+      // 否则，一律重定向到 onboarding 页面完成流程
+      navigate("/onboarding");
+    }
+  }
+}, [isAuthenticated, user, navigate]);
 
   // 监听 Redux 登录错误并同步到本地 state
   useEffect(() => {

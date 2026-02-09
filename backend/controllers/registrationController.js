@@ -31,7 +31,7 @@ exports.generateRegistrationToken = async (req, res, next) => {
             token
         });
 
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         const registrationUrl = `${frontendUrl}/register?token=${token}&email=${email}`;
         const message = `Hello ${name},\n\nWelcome to the team! 
         Please use the following link to complete your registration:
