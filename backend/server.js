@@ -8,6 +8,8 @@ const registrationRoutes = require('./routes/registrationRoutes')
 const path = require('path');
 const onboardingRoutes = require('./routes/onboardingRoutes');
 const hrRoutes = require('./routes/hrRoutes')
+const documentRoutes = require("./routes/documentRoutes");
+const personalInfoRoutes = require("./routes/personalInfoRoutes");
 
 
 dotenv.config();
@@ -25,8 +27,10 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes)
+app.use("/api/documents", documentRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/onboarding', onboardingRoutes);
+app.use("/api", personalInfoRoutes);
 // manage to hrRoutes
 app.use('/api/hr', hrRoutes);
 
