@@ -10,7 +10,7 @@ exports.getTokenHistory = async (req, res, next) => {
     const tokens = await Registration.find()
       .sort({ createdAt: -1 })
       .select('email name token status createdAt');
-
+      
     res.status(200).json({
       success: true,
       count: tokens.length,

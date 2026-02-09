@@ -44,28 +44,35 @@ export const login = createAsyncThunk(
       }
     }
   );
+export const signup = createAsyncThunk(
+  "auth/signup",
+  async ({ token, username, email, password, confirmPassword }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, username, email, password, confirmPassword }),
+      });
 
-  export const signup = createAsyncThunk(
-    "auth/signup",
-    async ({ token, username, email, password,confirmPassword }, { rejectWithValue }) => {
-      try {
-        const res = await fetch(`/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, username, email, password,confirmPassword }),
-        });
-  
-        const data = await res.json().catch(() => ({}));
-  
-        if (!res.ok) {
-          return rejectWithValue(data?.message || "Registration failed");
-        }
-        return { message: data?.message || "Registration completed. Please login." }; // { success:true, message }
-      } catch (e) {
-        return rejectWithValue(e?.message || "Network error");
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return rejectWithValue(data?.message || data?.error || "Registration failed");
       }
+
+      const authToken = data?.token || data?.accessToken || data?.jwt;
+      const user = data?.user || null;
+
+      if (!authToken || !user) {
+        return rejectWithValue(data?.message || "Registration succeeded but token/user missing");
+      }
+
+      return { token: authToken, user, message: data?.message || "Registration successful" };
+    } catch (e) {
+      return rejectWithValue(e?.message || "Network error");
     }
-  );
+  }
+);
 
 
   const savedAuth = getUserFromStorage();
@@ -154,6 +161,14 @@ const authSlice = createSlice({
             state.signUp.success = true;
             state.signUp.error = "";
             state.signUp.message = action.payload?.message || "";
+
+            // auto-login after signup
+            state.token = action.payload.token;
+            state.user = action.payload.user;
+            state.isAuthenticated = true;
+
+            localStorage.setItem(TOKEN_KEY, action.payload.token);
+            localStorage.setItem(USER_KEY, JSON.stringify(action.payload.user || {}));
           })
           .addCase(signup.rejected, (state, action) => {
             state.signUp.loading = false;
