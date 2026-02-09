@@ -17,6 +17,8 @@ export default function HiringManagement(){
         rejected:[]
     });
 
+    const [selectedApplication, setSelectedApplication] = useState(null);
+
     // get data when page loading
     useEffect(()=>{
         fetchTokenHistory();
@@ -190,13 +192,13 @@ export default function HiringManagement(){
 
 
 
-            {/* Onboarding applications review    */}
+     {/* Onboarding applications review    */}
         <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
                 Onboarding Applications Review
             </h2>
             <div className="grid grid-cols-3 gap-4">
-                {/* pending list*/}
+         {/* pending list*/}
                 <div>
                         <h3 className="font-medium text-yellow-600 mb-2">
                         Pending ({applications.pending.length})
@@ -206,25 +208,21 @@ export default function HiringManagement(){
                              applications.pending.map((emp)=>(
                            <div key={emp._id} className="border rounded p-3 mb-2">
                             <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-xs text-gray-500">{emp.email}</p>
-                            <div className="flex gap-2 mt-2">
-                                <button 
-                                onClick={()=> handleApprove(emp._id)}
-                                className="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600">
-                                Approve
-                                </button>       
-                                <button 
-                                onClick={()=> handleReject(emp._id)}
-                                className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">
-                                    Reject
-                                    </button>
-                                </div>
+                            <p className="text-xs text-gray-500">{emp.user?.email}</p>
+                            <button
+                            // if pending could be action.. 
+                                onClick={() => setSelectedApplication({ ...emp, _action: 'pending' })}
+                                className="text-blue-600 hover:underline text-xs mt-1"
+                            >
+                                View Application
+                            </button>
                            </div>
                              ))
                         ) }
                 </div>
 
-        {/* approve list */}
+    
+     {/* approve list */}
         <div>
             <h3 className="font-medium text-green-600 mb-2">
                 Approved ({applications.approved.length})
@@ -233,41 +231,178 @@ export default function HiringManagement(){
                 <p>No Approved applications</p>
                 ):(
                     applications.approved.map((emp)=>(
-                        <div  key={emp._id} className="border rounded p-3 mb-2">
+                        <div key={emp._id} className="border rounded p-3 mb-2">
                             <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-xs text-gray-500">{emp.email}</p>
+                            <p className="text-xs text-gray-500">{emp.user?.email}</p>
+                            <button
+                                onClick={() => setSelectedApplication({ ...emp, _action: 'approved' })}
+                                className="text-blue-600 hover:underline text-xs mt-1"
+                            >
+                                View Application
+                            </button>
                         </div>
                     ))
                 )
                 }
         </div>
         
-            {/* reject */}
+        {/* reject */}
             <div>
                 <h3 className="font-medium text-red-600 mb-2">
-                    Rejected ({applications.rejected.length })
+                    Rejected ({applications.rejected.length})
                 </h3>
-
                 {applications.rejected.length === 0 ? (
                     <p className="text-sm text-gray-400">No rejected applications</p>
                 ):(
                     applications.rejected.map((emp)=>(
                       <div key={emp._id} className="border rounded p-3 mb-2">
                         <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                        <p className="text-xs text-gray-500">{emp.email}</p>
+                        <p className="text-xs text-gray-500">{emp.user?.email}</p>
                         <p className="text-xs text-red-500 mt-1">
-                    Feedback: {emp.hrFeedback}
-                  </p>
-                </div>
+                            Feedback: {emp.hrFeedback}
+                        </p>
+                        <button
+                            onClick={() => setSelectedApplication({ ...emp, _action: 'rejected' })}
+                            className="text-blue-600 hover:underline text-xs mt-1"
+                        >
+                            View Application
+                        </button>
+                      </div>
                     ))
                 )}
             </div>
 
             </div>
         </div>
+    {/*  View Application Detail Panel */}
+      {selectedApplication && (
+        <div className="bg-white rounded-lg shadow p-6 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-700">
+              Application Detail
+            </h2>
+            <button
+              onClick={() => setSelectedApplication(null)}
+              className="text-gray-400 hover:text-gray-600 text-xl"
+            >
+              ✕
+            </button>
+          </div>
 
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">Full Name</p>
+              <p className="font-medium">
+                {selectedApplication.firstName} {selectedApplication.middleName || ''} {selectedApplication.lastName}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Preferred Name</p>
+              <p className="font-medium">{selectedApplication.preferredName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Email</p>
+              <p className="font-medium">{selectedApplication.user?.email || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Phone</p>
+              <p className="font-medium">{selectedApplication.phoneNumber || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Date of Birth</p>
+              <p className="font-medium">
+                {selectedApplication.dob ? new Date(selectedApplication.dob).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Gender</p>
+              <p className="font-medium">{selectedApplication.gender || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">SSN</p>
+              <p className="font-medium">
+                {selectedApplication.ssn ? `***-**-${selectedApplication.ssn.slice(-4)}` : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Address</p>
+              <p className="font-medium">
+                {selectedApplication.address
+                  ? `${selectedApplication.address.building || ''} ${selectedApplication.address.street || ''}, ${selectedApplication.address.city || ''}, ${selectedApplication.address.state || ''} ${selectedApplication.address.zip || ''}`
+                  : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Residency Status</p>
+              <p className="font-medium">
+                {selectedApplication.residencyStatus?.isCitizenOrPermanentResident
+                  ? selectedApplication.residencyStatus.statusType
+                  : selectedApplication.residencyStatus?.workAuthorization?.type || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Application Status</p>
+              <p className="font-medium">{selectedApplication.applicationStatus}</p>
+            </div>
+          </div>
+
+          {/* Emergency Contacts */}
+          {selectedApplication.emergencyContacts?.length > 0 && (
+            <div className="mt-4">
+              <p className="text-gray-500 text-sm mb-2">Emergency Contacts</p>
+              {selectedApplication.emergencyContacts.map((contact, index) => (
+                <div key={index} className="border rounded p-2 mb-1 text-sm">
+                  <p className="font-medium">
+                    {contact.firstName} {contact.lastName} ({contact.relationship})
+                  </p>
+                  <p className="text-gray-500">Phone: {contact.phone}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* HR Feedback (if rejected) */}
+          {selectedApplication.hrFeedback && (
+            <div className="mt-4 p-3 bg-red-50 rounded">
+              <p className="text-sm text-red-600">
+                HR Feedback: {selectedApplication.hrFeedback}
+              </p>
+            </div>
+          )}
+
+          {/* Approve/Reject buttons - only for Pending */}
+          {selectedApplication._action === 'pending' && (
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  handleApprove(selectedApplication._id);
+                  setSelectedApplication(null);
+                }}
+                className="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => {
+                  handleReject(selectedApplication._id);
+                  setSelectedApplication(null);
+                }}
+                className="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600"
+              >
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      )}
  
         </div>
+
+
+
+
+
+
     )
  
 
