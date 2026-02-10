@@ -1013,7 +1013,7 @@ export default function OnboardingPage() {
                     hint="PDF or image."
                     fileName={driverDoc?.fileName || ""}
                     disabled={isReadOnly}
-                    status={driverDoc?.status}
+                    status={driverDoc?.status === "Approved" ? null : driverDoc?.status}
                     feedback={driverDoc?.feedback}
                     uploading={isUploading(DOC_TYPES.DRIVER_LICENSE)}
                     error={uploadErr(DOC_TYPES.DRIVER_LICENSE)}

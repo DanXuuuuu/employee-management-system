@@ -61,6 +61,8 @@ exports.uploadDocument = async (req, res, next) => {
         message: "This document already exists. Please use the re-upload endpoint if it was rejected."
       });
     }
+    const isAutoApprove = type === "Driver License"; 
+    const initialStatus = isAutoApprove ? "Approved" : "Pending";
 
     // 3. 创建数据库记录
     const fileUrl = `/uploads/${req.file.filename}`;
@@ -70,7 +72,7 @@ exports.uploadDocument = async (req, res, next) => {
       fileUrl,
       fileKey: req.file.filename,
       fileName: req.file.originalname,
-      status: "Pending", // 初始状态均为 Pending
+      status: initialStatus, // 初始状态均为 Pending
       feedback: "",
     });
 

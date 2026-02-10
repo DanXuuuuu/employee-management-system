@@ -32,6 +32,7 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/documents', documentRoutes);
 // manage to hrRoutes
 app.use('/api/hr', hrRoutes);
+app.use('/api/personal-info', personalInfoRoutes);
 
 
 
