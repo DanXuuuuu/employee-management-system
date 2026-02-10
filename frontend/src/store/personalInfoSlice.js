@@ -8,13 +8,15 @@ const pickErrorMessage = (payload, fallback) => {
   return payload.message || payload.error || fallback;
 };
 
+// 辅助函数：格式化日期字符串为 YYYY-MM-DD 以适配 input[type="date"]
+const formatDate = (dateStr) => (dateStr ? String(dateStr).slice(0, 10) : "");
+
 // GET /api/personal-info
 export const fetchPersonalInfo = createAsyncThunk(
   "personalInfo/fetchPersonalInfo",
   async (_, { rejectWithValue, getState }) => {
     try {
       const token = getState()?.auth?.token;
-
       const res = await fetch(`${BASE_URL}/api/personal-info`, {
         method: "GET",
         headers: {
@@ -22,13 +24,11 @@ export const fetchPersonalInfo = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.ok === false) {
         return rejectWithValue(pickErrorMessage(json, "Failed to fetch personal info"));
       }
-
-      return json.data; // employee object
+      return json.data;
     } catch (err) {
       return rejectWithValue(err?.message || "Network error");
     }
@@ -42,60 +42,29 @@ export const savePersonalInfoSection = createAsyncThunk(
     try {
       const state = getState();
       const token = state?.auth?.token;
-      const form = state?.personalInfo?.form || {};
+      const form = state.personalInfo.form;
 
       let payload = {};
+      // 构造对应 section 的 payload
       if (section === "name") {
         payload = {
-          firstName: form.firstName || "",
-          lastName: form.lastName || "",
-          middleName: form.middleName || "",
-          preferredName: form.preferredName || "",
-          profilePicture: form.profilePicture || "",
-          email: form.email || "",
-          ssn: form.ssn || "",
-          dob: form.dob || "",
-          gender: form.gender || "",
+          firstName: form.firstName, lastName: form.lastName, middleName: form.middleName,
+          preferredName: form.preferredName, profilePicture: form.profilePicture,
+          gender: form.gender, dob: form.dob
         };
-      }
-
-      if (section === "address") {
+      } else if (section === "address") {
+        payload = { ...form.address };
+      } else if (section === "contact") {
+        payload = { phoneNumber: form.phoneNumber, workPhoneNumber: form.workPhoneNumber };
+      } else if (section === "employment") {
         payload = {
-          building: form?.address?.building || "",
-          street: form?.address?.street || "",
-          city: form?.address?.city || "",
-          state: form?.address?.state || "",
-          zip: form?.address?.zip || "",
+          visaTitle: form.residencyStatus.workAuthorization.type,
+          startDate: form.residencyStatus.workAuthorization.startDate,
+          endDate: form.residencyStatus.workAuthorization.endDate,
+          otherType: form.residencyStatus.workAuthorization.otherType
         };
-      }
-
-      if (section === "contact") {
-        payload = {
-          phoneNumber: form.phoneNumber || "",
-          workPhoneNumber: form.workPhoneNumber || "",
-        };
-      }
-
-      if (section === "employment") {
-        payload = {
-          visaTitle: form?.residencyStatus?.workAuthorization?.type || "",
-          otherType: form?.residencyStatus?.workAuthorization?.otherType || "",
-          startDate: form?.residencyStatus?.workAuthorization?.startDate || "",
-          endDate: form?.residencyStatus?.workAuthorization?.endDate || "",
-        };
-      }
-
-      if (section === "emergency") {
-        payload = {
-          emergencyContact: form.emergencyContact || {
-            firstName: "",
-            lastName: "",
-            middleName: "",
-            phone: "",
-            email: "",
-            relationship: "",
-          },
-        };
+      } else if (section === "emergency") {
+        payload = { emergencyContact: form.emergencyContact };
       }
 
       const res = await fetch(`${BASE_URL}/api/personal-info/${section}`, {
@@ -111,8 +80,7 @@ export const savePersonalInfoSection = createAsyncThunk(
       if (!res.ok || json.ok === false) {
         return rejectWithValue(pickErrorMessage(json, `Failed to update ${section}`));
       }
-
-      return { section, employee: json.data, message: json.message || "" };
+      return { section, employee: json.data, message: json.message };
     } catch (err) {
       return rejectWithValue(err?.message || "Network error");
     }
@@ -122,33 +90,12 @@ export const savePersonalInfoSection = createAsyncThunk(
 const initialState = {
   status: "idle",
   error: null,
-
-  savingSection: null, 
-  saveError: null,
+  savingSection: null,
   saveMessage: "",
-
-
   form: {
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    preferredName: "",
-    profilePicture: "",
-    email: "",
-    ssn: "",
-    dob: "",
-    gender: "I do not wish to answer",
-
-    address: { building: "", street: "", city: "", state: "", zip: "" },
-
-    phoneNumber: "",
-    workPhoneNumber: "",
-
-    residencyStatus: {
-      workAuthorization: { type: "F1(CPT/OPT)", otherType: "", startDate: "", endDate: "" },
-    },
-    // fetch emergencyContacts[0] if more than 1
-    emergencyContact: { firstName: "", lastName: "", middleName: "", phone: "", email: "", relationship: "" },
+    firstName: "", lastName: "", address: {},
+    residencyStatus: { workAuthorization: {} },
+    emergencyContact: {},
   },
 };
 
@@ -158,117 +105,52 @@ const personalInfoSlice = createSlice({
   reducers: {
     clearPersonalInfoError: (state) => {
       state.error = null;
-      state.saveError = null;
       state.saveMessage = "";
     },
-
-    setField: (state, action) => {
-      const { name, value } = action.payload;
-      state.form[name] = value;
-    },
-    setAddressField: (state, action) => {
-      const { name, value } = action.payload;
-      state.form.address[name] = value;
-    },
-    setWorkAuthField: (state, action) => {
-      const { name, value } = action.payload;
-      state.form.residencyStatus.workAuthorization[name] = value;
-    },
-    setReferenceField: (state, action) => {
-      const { name, value } = action.payload;
-      state.form.reference[name] = value;
-    },
-    setEmergencyField: (state, action) => {
-      const { name, value } = action.payload;
-      state.form.emergencyContact[name] = value;
-    },
+    setField: (state, action) => { state.form[action.payload.name] = action.payload.value; },
+    setAddressField: (state, action) => { state.form.address[action.payload.name] = action.payload.value; },
+    setWorkAuthField: (state, action) => { state.form.residencyStatus.workAuthorization[action.payload.name] = action.payload.value; },
+    setEmergencyField: (state, action) => { state.form.emergencyContact[action.payload.name] = action.payload.value; },
   },
   extraReducers: (builder) => {
+    const handleDataSuccess = (state, action) => {
+      state.status = "succeeded";
+      const emp = action.payload.employee || action.payload;
+      const ec0 = emp.emergencyContacts?.[0] || {};
+      
+      // 数据注水并处理日期
+      state.form = {
+        ...state.form,
+        ...emp,
+        dob: formatDate(emp.dob),
+        residencyStatus: {
+          ...emp.residencyStatus,
+          workAuthorization: {
+            ...emp.residencyStatus?.workAuthorization,
+            startDate: formatDate(emp.residencyStatus?.workAuthorization?.startDate),
+            endDate: formatDate(emp.residencyStatus?.workAuthorization?.endDate),
+          }
+        },
+        emergencyContact: { ...ec0 }
+      };
+      if (action.payload.message) state.saveMessage = action.payload.message;
+    };
+
     builder
-      // fetch
-      .addCase(fetchPersonalInfo.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(fetchPersonalInfo.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.error = null;
-
-        const employee = action.payload || {};
-        const emergency0 = Array.isArray(employee.emergencyContacts) ? employee.emergencyContacts[0] : null;
-
-        state.form = {
-          ...state.form,
-          ...employee,
-          address: { ...state.form.address, ...(employee.address || {}) },
-          residencyStatus: {
-            ...state.form.residencyStatus,
-            ...(employee.residencyStatus || {}),
-            workAuthorization: {
-              ...state.form.residencyStatus.workAuthorization,
-              ...(employee?.residencyStatus?.workAuthorization || {}),
-            },
-          },
-          reference: { ...state.form.reference, ...(employee.reference || {}) },
-          emergencyContact: {
-            ...state.form.emergencyContact,
-            ...(emergency0 || {}),
-          },
-        };
-      })
-      .addCase(fetchPersonalInfo.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload || action.error.message;
-      })
-
-      // save section
+      .addCase(fetchPersonalInfo.fulfilled, handleDataSuccess)
+      .addCase(savePersonalInfoSection.fulfilled, handleDataSuccess)
       .addCase(savePersonalInfoSection.pending, (state, action) => {
-        state.savingSection = action.meta.arg?.section || null;
-        state.saveError = null;
-        state.saveMessage = "";
-      })
-      .addCase(savePersonalInfoSection.fulfilled, (state, action) => {
-        state.savingSection = null;
-        state.saveError = null;
-
-        const employee = action.payload?.employee || {};
-        const emergency0 = Array.isArray(employee.emergencyContacts) ? employee.emergencyContacts[0] : null;
-
-        state.form = {
-          ...state.form,
-          ...employee,
-          address: { ...state.form.address, ...(employee.address || {}) },
-          residencyStatus: {
-            ...state.form.residencyStatus,
-            ...(employee.residencyStatus || {}),
-            workAuthorization: {
-              ...state.form.residencyStatus.workAuthorization,
-              ...(employee?.residencyStatus?.workAuthorization || {}),
-            },
-          },
-          reference: { ...state.form.reference, ...(employee.reference || {}) },
-          emergencyContact: {
-            ...state.form.emergencyContact,
-            ...(emergency0 || {}),
-          },
-        };
-
-        state.saveMessage = action.payload?.message || "Saved.";
+        state.savingSection = action.meta.arg.section;
       })
       .addCase(savePersonalInfoSection.rejected, (state, action) => {
         state.savingSection = null;
-        state.saveError = action.payload || action.error.message;
+        state.error = action.payload;
       });
   },
 });
 
-export const {
-  clearPersonalInfoError,
-  setField,
-  setAddressField,
-  setWorkAuthField,
-  setReferenceField,
-  setEmergencyField,
+export const { 
+  clearPersonalInfoError, setField, setAddressField, setWorkAuthField, setEmergencyField 
 } = personalInfoSlice.actions;
 
 export default personalInfoSlice.reducer;
