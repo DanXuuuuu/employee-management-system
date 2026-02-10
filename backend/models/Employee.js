@@ -89,6 +89,19 @@ const employeeSchema = new mongoose.Schema({
             endDate: Date
         }
     },
+    documents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Document' 
+    }],
+
+    reference: {
+        firstName: String,
+        lastName: String,
+        middleName: String,
+        phone: String,
+        email: String,
+        relationship: String
+      },
 
    
     emergencyContacts: [{
@@ -118,10 +131,11 @@ const employeeSchema = new mongoose.Schema({
   
     applicationStatus: {
         type: String,
-        enum: ['Not Started', 'Pending', 'Approved', 'Rejected'],
-        default: 'Not Started'
-    },
-    hrFeedback: String
+        enum: ['NOT_STARTED', 'PENDING', 'APPROVED', 'REJECTED'],
+        default: 'NOT_STARTED'
+      },
+      
+    hrFeedback: { type: String, default: "" }
 
 }, 
     { timestamps: true });

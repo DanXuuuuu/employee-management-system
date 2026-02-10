@@ -21,7 +21,7 @@ export const login = createAsyncThunk(
     "auth/login",
     async ({ email, password }, { rejectWithValue }) => {
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch("api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -43,8 +43,7 @@ export const login = createAsyncThunk(
         return rejectWithValue(e?.message || "Network error");
       }
     }
-  );
-export const signup = createAsyncThunk(
+  );export const signup = createAsyncThunk(
   "auth/signup",
   async ({ token, username, email, password, confirmPassword }, { rejectWithValue }) => {
     try {
@@ -73,7 +72,6 @@ export const signup = createAsyncThunk(
     }
   }
 );
-
 
   const savedAuth = getUserFromStorage();
 

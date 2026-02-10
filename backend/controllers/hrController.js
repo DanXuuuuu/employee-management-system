@@ -229,7 +229,7 @@ exports.getVisaInProgress = async (req, res, next) => {
         );
       }
 
-      // only show who havent finish yet
+      // only show who haven't finish yet
       if (nextStep !== 'All documents approved') {
         results.push({
           employee: emp,

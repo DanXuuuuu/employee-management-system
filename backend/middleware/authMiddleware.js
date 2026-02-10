@@ -17,9 +17,12 @@ exports.protect = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_TOKEN_SECRET);
-
+        const currentUser = await User.findById(decoded.id);
+        if (!currentUser) {
+            return next(new Error('The user belonging to this token no longer exists.'));
+        }
    
-        req.user = decoded; 
+        req.user = currentUser; 
         next();
     } catch (error) {
         const err = new Error('Invalid or expired token. Please log in again.');
