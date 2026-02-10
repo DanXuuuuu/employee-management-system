@@ -114,7 +114,21 @@ export default function VisaStatusManagementPage() {
   }, [canUploadI20, i20Status, i20Doc?.feedback]);
 
 
-  const openLink = (url) => () => window.open(url, "_blank", "noopener,noreferrer");
+  const openLink = (url) => () => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const downloadFile = (url, fileName = "download") => () => {
+    if (!url) return;
+  
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName; // hint browser to download
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
 
   const handlePick = (type) => async (file) => {
     if (!file) return;
@@ -266,7 +280,7 @@ export default function VisaStatusManagementPage() {
                     feedback={optReceiptDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_RECEIPT)}
                     onPreview={optReceiptDoc?.fileUrl ? openLink(optReceiptDoc.fileUrl) : undefined}
-                    onDownload={optReceiptDoc?.fileUrl ? openLink(optReceiptDoc.fileUrl) : undefined}
+                    onDownload={optReceiptDoc?.fileUrl ? downloadFile(optReceiptDoc.fileUrl, optReceiptDoc.fileName || "document") : undefined}
                   />
                 </div>
 
@@ -291,7 +305,7 @@ export default function VisaStatusManagementPage() {
                     feedback={optEadDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_EAD)}
                     onPreview={optEadDoc?.fileUrl ? openLink(optEadDoc.fileUrl) : undefined}
-                    onDownload={optEadDoc?.fileUrl ? openLink(optEadDoc.fileUrl) : undefined}
+                    onDownload={optEadDoc?.fileUrl ?  downloadFile(optEadDoc.fileUrl, optEadDoc.fileName || "document") : undefined}
                   />
                 </div>
 
