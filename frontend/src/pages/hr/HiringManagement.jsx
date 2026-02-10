@@ -1,280 +1,283 @@
 import { useEffect, useState } from "react";
-import api from '../../api';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTokenHistory, fetchOnboardingApplications, approveApplication, rejectApplication, generateToken,
+  clearSuccessMessage} from '../../store/hrSlice';
 
+export default function HiringManagement() {
+  const dispatch = useDispatch();
+  
+  // fetch data from redux store
+  const {   tokenHistory,  onboardingApplications, loading, error, successMessage } = useSelector((state) => state.hr);
 
+  //  Local state  
 
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [selectedApplication, setSelectedApplication] = useState(null);
 
-export default function HiringManagement(){
-    // state
-    const [ email, setEmail ] = useState('');
-    const [ name, setName ] = useState('');
-    const [ sending, setSending ] = useState(false);
-    const [ message, setMessage ] = useState('');
-    const [ tokens, setTokens ] = useState([]);
-    const [ applications, setApplications ] = useState({
-        pending:[],
-        approved: [],
-        rejected:[]
-    });
+  //   effects  
+  // fetch data when loading page
+  useEffect(() => {
+    dispatch(fetchTokenHistory());
+    dispatch(fetchOnboardingApplications());
+  }, [dispatch]);
 
-    const [selectedApplication, setSelectedApplication] = useState(null);
+  // dealwith success message 
+  useEffect(() => {
+    if (successMessage) {
+      setMessage(successMessage);
+      // clean message after 3s
+      const timer = setTimeout(() => {
+        setMessage('');
+        dispatch(clearSuccessMessage());
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, dispatch]);
 
-    // get data when page loading
-    useEffect(()=>{
-        fetchTokenHistory();
-        fetchApplications();
-    }, []);
-
-    // fetch token history func
-    const fetchTokenHistory = async()=>{
-        try{
-            const res = await api.get('/hr/token-history');
-            // store data
-            setTokens(res.data.data);
-
-        }catch(err){
-            console.error('Failed to fetch token history:', err);
-        }
-    };
-
-    // fetch Onboarding applications 
-
-    const fetchApplications = async() => {
-        try{
-            const res = await api.get('/hr/onboarding-applications');
-            // data: res.data ,data: backendcode name
-            setApplications(res.data.data);
-
-        }catch(err){
-            console.error('Failed to fetch onboarding application:', err);
-        }
-    };
-
-    // send register invitation - call generate token api
-    const handleGenerateToken = async()=>{
-        try{
-            // must have email and name
-            if(!email || !name){
-                setMessage('Please enter both email and name');
-                return;
-
-            };
-        // change state
-            setSending(true);
-            // clean message 
-            setMessage('');
-
-            // generate token
-            try{
-                // request body
-                const res = await api.post('/registration/generate', { email, name});
-                // show the message on page 
-                setMessage(res.data.message);
-                // clean input box 
-                setEmail('');
-                setName('');
-                // directly show, dont have to reload page when just sent invitation
-                fetchTokenHistory();
-
-            }catch(err){
-                // undefined or message 
-                setMessage(err.response?.data?.message || 'Failed to send invitation');
-            }
-            // finally must run whatever success or fail 
-        }finally{
-            // reset the sending button 
-            setSending(false);
-        }
-    };
-    // audit Onboarding application 
-    //get id from page when clicked the button 
-    const handleApprove = async (id)=>{
-        try{
-            // send update request and change the applicationStatus 
-            await api.patch(`/hr/onboarding/${id}/approve`);
-            fetchApplications();
-
-        }catch(err){
-            console.error('Failed to approve:', err);
-        };
-
-
+  // Event Handlers  
+  // Generate Token
+  const handleGenerateToken = async () => {
+    // must email and name 
+    if (!email || !name) {
+      setMessage('Please enter both email and name');
+      return;
     }
 
-    const handleReject = async(id)=>{
-        const feedback = prompt('Please enter rejection reason:');
-        if(!feedback) return;
+    // clean old message
+    setMessage('');
 
-        try{
-            await api.patch(`/hr/onboarding/${id}/reject`, {feedback});
-            fetchApplications();
-
-        }catch(err){
-            console.error('Failed to reject: ', err);
-        }
-    };
-    return (
-        <div className="p-6">
-            {/* page  */}
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Hiring Management</h1>
-            {/* token generator */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                    Generate Registration Token
-                </h2>
-                <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">
-                            Name
-                        </label>
-                        <input type="text" value={name} onChange={(e)=> setName(e.target.value)} placeholder="Employee name"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"/>
-                    </div>
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                        <input type="email" value={email} onChange={(e)=> setEmail(e.target.value)} placeholder="employee@example.com"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"/>
-                    </div>
-                    <button onClick={handleGenerateToken} disabled={sending} className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400">
-                    {sending ? 'Sending...' : 'Send Invitation'}
-                    </button>  
-                </div>
-                {message && (
-                    <p className="mt-3 text-sm text-green-600">{message}</p>
-                )}
-            </div>
-            {/* token history  */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                    Registration Token History
-                </h2>
-
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-2">Email</th>
-                            <th className="px-4 py-2">Name</th>
-                            <th className="px-4 py-2">Status</th>
-                            <th className="px-4 py-2">Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tokens.length === 0 ? (
-                            <tr>
-                                <td colSpan="4" className="px-4 py-3 text-center text-gray-400">
-                                No records found
-                                </td>
-                            </tr>
-                        ): (
-                            tokens.map((token)=>(
-                                // for find everyline
-                            <tr key={token._id} className="border-t">
-                                <td className="px-4 py-2">{token.email}</td>
-                                 <td className="px-4 py-2">{token.name}</td>
-                                  <td className="px-4 py-2">
-                                   <span className={`px-2 py-1 rounded text-xs ${
-                      token.status === 'used'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                        {token.status}
-                    </span>
-                </td>
-                        <td className="px-4 py-2">
-                            {new Date(token.createdAt).toLocaleDateString()}
-                        </td>
-                    </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-
-
-     {/* Onboarding applications review    */}
-        <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                Onboarding Applications Review
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-         {/* pending list*/}
-                <div>
-                        <h3 className="font-medium text-yellow-600 mb-2">
-                        Pending ({applications.pending.length})
-                        </h3>
-                       {applications.pending.length === 0 ? (
-                        <p>No pending applications</p>):(
-                             applications.pending.map((emp)=>(
-                           <div key={emp._id} className="border rounded p-3 mb-2">
-                            <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-xs text-gray-500">{emp.user?.email}</p>
-                            <button
-                            // if pending could be action.. 
-                                onClick={() => setSelectedApplication({ ...emp, _action: 'pending' })}
-                                className="text-blue-600 hover:underline text-xs mt-1"
-                            >
-                                View Application
-                            </button>
-                           </div>
-                             ))
-                        ) }
-                </div>
-
+    // dispatch return Promise and check result 
+    const result = await dispatch(generateToken({ email }));
     
-     {/* approve list */}
-        <div>
-            <h3 className="font-medium text-green-600 mb-2">
-                Approved ({applications.approved.length})
-            </h3>
-            {applications.approved.length===0?(
-                <p>No Approved applications</p>
-                ):(
-                    applications.approved.map((emp)=>(
-                        <div key={emp._id} className="border rounded p-3 mb-2">
-                            <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-xs text-gray-500">{emp.user?.email}</p>
-                            <button
-                                onClick={() => setSelectedApplication({ ...emp, _action: 'approved' })}
-                                className="text-blue-600 hover:underline text-xs mt-1"
-                            >
-                                View Application
-                            </button>
-                        </div>
-                    ))
-                )
-                }
+    // success - clean form
+    if (result.type.endsWith('fulfilled')) {
+      setEmail('');
+      setName('');
+    } else {
+      setMessage(result.payload || 'Failed to send invitation');
+    }
+  };
+
+  // approve 
+  const handleApprove = async (id) => {
+    const result = await dispatch(approveApplication(id));
+    
+    if (result.type.endsWith('fulfilled')) {
+      // re fetch list 
+      dispatch(fetchOnboardingApplications());
+    }
+  };
+
+  // reject 
+  const handleReject = async (id) => {
+    const feedback = prompt('Please enter rejection reason:');
+    if (!feedback) return;
+
+    const result = await dispatch(rejectApplication({ id, feedback }));
+    
+    if (result.type.endsWith('fulfilled')) {
+      dispatch(fetchOnboardingApplications());
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        Hiring Management
+      </h1>
+
+      {/* show error message  */}
+      {error.hiring && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error.hiring}
         </div>
-        
-        {/* reject */}
+      )}
+
+      {/* Token generate  */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Generate Registration Token
+        </h2>
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Employee name"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="employee@example.com"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            onClick={handleGenerateToken}
+            disabled={loading.hiring}
+            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {loading.hiring ? 'Sending...' : 'Send Invitation'}
+          </button>
+        </div>
+        {message && (
+          <p className="mt-3 text-sm text-green-600">{message}</p>
+        )}
+      </div>
+
+      {/* Token history record  */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Registration Token History
+        </h2>
+
+        {loading.hiring ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading token history...
+          </div>
+        ) : (
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Created At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tokenHistory.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-4 py-3 text-center text-gray-400">
+                    No records found
+                  </td>
+                </tr>
+              ) : (
+                tokenHistory.map((token) => (
+                  <tr key={token._id} className="border-t">
+                    <td className="px-4 py-2">{token.email}</td>
+                    <td className="px-4 py-2">{token.name}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        token.status === 'used'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {token.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      {new Date(token.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Onboarding application review  */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Onboarding Applications Review
+        </h2>
+
+        {loading.hiring ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading applications...
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {/* Pending list  */}
             <div>
-                <h3 className="font-medium text-red-600 mb-2">
-                    Rejected ({applications.rejected.length})
-                </h3>
-                {applications.rejected.length === 0 ? (
-                    <p className="text-sm text-gray-400">No rejected applications</p>
-                ):(
-                    applications.rejected.map((emp)=>(
-                      <div key={emp._id} className="border rounded p-3 mb-2">
-                        <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                        <p className="text-xs text-gray-500">{emp.user?.email}</p>
-                        <p className="text-xs text-red-500 mt-1">
-                            Feedback: {emp.hrFeedback}
-                        </p>
-                        <button
-                            onClick={() => setSelectedApplication({ ...emp, _action: 'rejected' })}
-                            className="text-blue-600 hover:underline text-xs mt-1"
-                        >
-                            View Application
-                        </button>
-                      </div>
-                    ))
-                )}
+              <h3 className="font-medium text-yellow-600 mb-2">
+                Pending ({onboardingApplications.pending?.length || 0})
+              </h3>
+              {(!onboardingApplications.pending || onboardingApplications.pending.length === 0) ? (
+                <p className="text-sm text-gray-400">No pending applications</p>
+              ) : (
+                onboardingApplications.pending.map((emp) => (
+                  <div key={emp._id} className="border rounded p-3 mb-2">
+                    <p className="font-medium">{emp.firstName} {emp.lastName}</p>
+                    <p className="text-xs text-gray-500">{emp.user?.email}</p>
+                    <button
+                      onClick={() => setSelectedApplication({ ...emp, _action: 'pending' })}
+                      className="text-blue-600 hover:underline text-xs mt-1"
+                    >
+                      View Application
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
 
+            {/* Approved list  */}
+            <div>
+              <h3 className="font-medium text-green-600 mb-2">
+                Approved ({onboardingApplications.approved?.length || 0})
+              </h3>
+              {(!onboardingApplications.approved || onboardingApplications.approved.length === 0) ? (
+                <p className="text-sm text-gray-400">No approved applications</p>
+              ) : (
+                onboardingApplications.approved.map((emp) => (
+                  <div key={emp._id} className="border rounded p-3 mb-2">
+                    <p className="font-medium">{emp.firstName} {emp.lastName}</p>
+                    <p className="text-xs text-gray-500">{emp.user?.email}</p>
+                    <button
+                      onClick={() => setSelectedApplication({ ...emp, _action: 'approved' })}
+                      className="text-blue-600 hover:underline text-xs mt-1"
+                    >
+                      View Application
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-        </div>
-    {/*  View Application Detail Panel */}
+
+            {/* Rejected list  */}
+            <div>
+              <h3 className="font-medium text-red-600 mb-2">
+                Rejected ({onboardingApplications.rejected?.length || 0})
+              </h3>
+              {(!onboardingApplications.rejected || onboardingApplications.rejected.length === 0) ? (
+                <p className="text-sm text-gray-400">No rejected applications</p>
+              ) : (
+                onboardingApplications.rejected.map((emp) => (
+                  <div key={emp._id} className="border rounded p-3 mb-2">
+                    <p className="font-medium">{emp.firstName} {emp.lastName}</p>
+                    <p className="text-xs text-gray-500">{emp.user?.email}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      Feedback: {emp.hrFeedback}
+                    </p>
+                    <button
+                      onClick={() => setSelectedApplication({ ...emp, _action: 'rejected' })}
+                      className="text-blue-600 hover:underline text-xs mt-1"
+                    >
+                      View Application
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Application detail page */}
       {selectedApplication && (
         <div className="bg-white rounded-lg shadow p-6 mt-6">
           <div className="flex justify-between items-center mb-4">
@@ -361,7 +364,7 @@ export default function HiringManagement(){
             </div>
           )}
 
-          {/* HR Feedback (if rejected) */}
+          {/* hr feedback when reject  */}
           {selectedApplication.hrFeedback && (
             <div className="mt-4 p-3 bg-red-50 rounded">
               <p className="text-sm text-red-600">
@@ -370,7 +373,7 @@ export default function HiringManagement(){
             </div>
           )}
 
-          {/* Approve/Reject buttons - only for Pending */}
+          {/* approve/reject button , only show pending situation */}
           {selectedApplication._action === 'pending' && (
             <div className="flex gap-3 mt-6">
               <button
@@ -395,15 +398,6 @@ export default function HiringManagement(){
           )}
         </div>
       )}
- 
-        </div>
-
-
-
-
-
-
-    )
- 
-
+    </div>
+  );
 }
