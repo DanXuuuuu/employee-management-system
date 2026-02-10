@@ -20,6 +20,5 @@ const { getOnboarding,submitOnboarding } = require("../controllers/onboardingCon
 
 // GET /api/onboarding
 router.get("/", protect, getOnboarding);
-router.post("/submit",protect,submitOnboarding);
 
 module.exports = router;

@@ -27,14 +27,6 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes)
-app.use("/api/documents", documentRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/onboarding', onboardingRoutes);
-app.use("/api", personalInfoRoutes);
-// manage to hrRoutes
-app.use('/api/hr', hrRoutes);
-
-
 
 // error middleware (must be last)
 app.use(errorHandler);
