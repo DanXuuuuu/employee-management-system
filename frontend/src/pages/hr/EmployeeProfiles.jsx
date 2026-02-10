@@ -14,13 +14,14 @@ export default function EmployeeProfiles() {
   //  Local state 
   // search input keep value in local state，cuz UI state dont need share
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false); 
 
   // effects  
   // fetch all empployee when loading page
   useEffect(() => {
     // dispatch thunk  will trigger async operate
     dispatch(fetchEmployees());
-  }, [dispatch]);
+  }, []);
 
   // Event Handlers 
   // search employee 
@@ -38,10 +39,16 @@ export default function EmployeeProfiles() {
   };
 
   // check employee detail 
+ 
   const handleViewDetail = (id) => {
-    // dispatch call API automatically，store result in selectedEmployee
-    dispatch(fetchEmployeeDetail(id));
-  };
+  if (isProcessing || loading.employees) return; //debounce 
+  setIsProcessing(true); // set loading state 
+   // dispatch call API automatically，store result in selectedEmployee
+  dispatch(fetchEmployeeDetail(id)).finally(() => {
+    setIsProcessing(false); //reset after finish
+  });
+};
+
 
   // close detail 
   const handleCloseDetail = () => {
@@ -124,11 +131,12 @@ export default function EmployeeProfiles() {
                     </td>
                     <td className="px-4 py-2">
                       <button
-                        onClick={() => handleViewDetail(emp._id)}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        View Detail
-                      </button>
+                    onClick={() => handleViewDetail(emp._id)}
+                    disabled={isProcessing || loading.employees}  
+                    className="text-blue-600 hover:underline text-sm disabled:text-gray-400 disabled:cursor-not-allowed"  
+                    >
+                    {isProcessing ? 'Loading...' : 'View Detail'}  
+                    </button>
                     </td>
                   </tr>
                 ))
