@@ -125,10 +125,9 @@ exports.getAllEmployees = async (req, res, next) => {
 // GET /api/hr/employees/:id
 exports.getEmployeeDetail = async (req, res, next) => {
   try {
-    const employee = await Employee.findById(req.params.id).populate(
-      'user',
-      'username email'
-    );
+    const employee = await Employee.findById(req.params.id)
+      .populate('user', 'username email')
+      .populate('documents'); // 关键：填充文档数组，这样 HR 才能拿到文件 URL
 
     if (!employee) {
       const err = new Error('Employee not found');
