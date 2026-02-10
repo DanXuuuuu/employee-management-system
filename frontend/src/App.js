@@ -1,4 +1,3 @@
-
 import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
@@ -12,11 +11,11 @@ import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
 import { useSelector } from "react-redux";
 
-
 function App() {
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const role = user?.role;
   const onboardingStatus = user?.applicationStatus;
+  
   const getPostLoginPath = () => {
     if (role === "HR") return "/hr/home";
     if (role === "Employee") {

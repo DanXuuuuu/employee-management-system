@@ -1,60 +1,59 @@
 import { useState, useEffect } from 'react';
-import api from '../../api';
+import { useDispatch, useSelector } from 'react-redux'; //redux hook 
+import {  fetchEmployees, searchEmployees, fetchEmployeeDetail, clearSelectedEmployee } from '../../store/hrSlice'; 
 
 export default function EmployeeProfiles() {
-  // state variable 
-  const [employees, setEmployees] = useState([]);
+ 
+  // useDispatch: use for send "action，trigger Redux operate
+  const dispatch = useDispatch();
+  
+  // useSelector: read data from Redux store 
+  // state.hr hr reducer in store.js  
+  const { employees, selectedEmployee, loading, error } = useSelector((state) => state.hr);
+  
+  //  Local state 
+  // search input keep value in local state，cuz UI state dont need share
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false); 
 
-  // fetch all employees when page loading 
+  // effects  
+  // fetch all empployee when loading page
   useEffect(() => {
-    fetchEmployees();
+    // dispatch thunk  will trigger async operate
+    dispatch(fetchEmployees());
   }, []);
 
-  // get all employees func 
-  const fetchEmployees = async () => {
-    try {
-      const res = await api.get('/hr/employees');
-      setEmployees(res.data.data);
-    } catch (err) {
-      console.error('Failed to fetch employees:', err);
-    }
-  };
-
-  // search Employee 
-  const handleSearch = async (value) => {
+  // Event Handlers 
+  // search employee 
+  const handleSearch = (value) => {
     setSearchQuery(value);
 
-    // if search box empty, refetech all employees 
+    // if search empty, re fetch all employees 
     if (!value.trim()) {
-      fetchEmployees();
+      dispatch(fetchEmployees());
       return;
     }
 
-    try {
-        // query string 
-      const res = await api.get(`/hr/employees/search?q=${value}`);
-      setEmployees(res.data.data);
-    } catch (err) {
-      console.error('Failed to search employees:', err);
-    }
+    // or call search api 
+    dispatch(searchEmployees(value));
   };
 
-  //  check employee detail info  
-  const handleViewDetail = async (id) => {
-    try {
-      const res = await api.get(`/hr/employees/${id}`);
-      setSelectedEmployee(res.data.data);
-    } catch (err) {
-      console.error('Failed to fetch employee detail:', err);
-    }
-  };
+  // check employee detail 
+ 
+  const handleViewDetail = (id) => {
+  if (isProcessing || loading.employees) return; //debounce 
+  setIsProcessing(true); // set loading state 
+   // dispatch call API automatically，store result in selectedEmployee
+  dispatch(fetchEmployeeDetail(id)).finally(() => {
+    setIsProcessing(false); //reset after finish
+  });
+};
 
-  // close detail page 
+
+  // close detail 
   const handleCloseDetail = () => {
-    // reset the selected employee
-    setSelectedEmployee(null);
+    // call slice  custom action
+    dispatch(clearSelectedEmployee());
   };
 
   return (
@@ -63,7 +62,14 @@ export default function EmployeeProfiles() {
         Employee Profiles
       </h1>
 
-      {/*  search input   */}
+      {/* show error message */}
+      {error.employees && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error.employees}
+        </div>
+      )}
+
+      {/* search input */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <input
           type="text"
@@ -74,65 +80,73 @@ export default function EmployeeProfiles() {
         />
       </div>
 
-      {/* employee table */}
+      {/* employee list */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">
           All Employees ({employees.length})
         </h2>
 
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Phone</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.length === 0 ? (
+        {/* loading state */}
+        {loading.employees ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading employees...
+          </div>
+        ) : (
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan="5" className="px-4 py-3 text-center text-gray-400">
-                  No employees found
-                </td>
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Phone</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Action</th>
               </tr>
-            ) : (
-              employees.map((emp) => (
-                <tr key={emp._id} className="border-t">
-                  <td className="px-4 py-2">
-                    {emp.lastName}, {emp.firstName}
-                    {emp.preferredName && ` (${emp.preferredName})`}
-                  </td>
-                  <td className="px-4 py-2">{emp.email}</td>
-                  <td className="px-4 py-2">{emp.phoneNumber}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      emp.applicationStatus === 'Approved'
-                        ? 'bg-green-100 text-green-700'
-                        : emp.applicationStatus === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {emp.applicationStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() => handleViewDetail(emp._id)}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View Detail
-                    </button>
+            </thead>
+            <tbody>
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-3 text-center text-gray-400">
+                    No employees found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                employees.map((emp) => (
+                  <tr key={emp._id} className="border-t">
+                    <td className="px-4 py-2">
+                      {emp.lastName}, {emp.firstName}
+                      {emp.preferredName && ` (${emp.preferredName})`}
+                    </td>
+                    <td className="px-4 py-2">{emp.email}</td>
+                    <td className="px-4 py-2">{emp.phoneNumber}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        emp.applicationStatus === 'Approved'
+                          ? 'bg-green-100 text-green-700'
+                          : emp.applicationStatus === 'Pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {emp.applicationStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                    onClick={() => handleViewDetail(emp._id)}
+                    disabled={isProcessing || loading.employees}  
+                    className="text-blue-600 hover:underline text-sm disabled:text-gray-400 disabled:cursor-not-allowed"  
+                    >
+                    {isProcessing ? 'Loading...' : 'View Detail'}  
+                    </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* clicked view detail see employee detail */}
+      {/* employee detail  */}
       {selectedEmployee && (
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
@@ -187,7 +201,6 @@ export default function EmployeeProfiles() {
             <div>
               <p className="text-gray-500">SSN</p>
               <p className="font-medium">
-                {/* hide ssn only check last 4 digits */}
                 ***-**-{selectedEmployee.ssn?.slice(-4)}
               </p>
             </div>
