@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { protect } = require("../middleware/authMiddleware");
 const upload  = require("../middleware/upload");
+
 const {
   getMyDocuments,
   uploadDocument,
@@ -13,9 +14,10 @@ const {
 router.get("/", protect, getMyDocuments);
 
 // POST /api/documents  (upload new)
-router.post("/", protect, upload.single("file"), uploadDocument);
+router.post("/", protect,  uploadDocument);
+// router.post("/", protect, upload.single("file"), uploadDocument);
 
 // PUT /api/documents/:id (reupload for rejected)
-router.put("/:id", protect, upload.single("file"), reuploadDocument);
+router.put("/:id", protect,  reuploadDocument);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+// UI
 import TextField from "../components/ui/TextField";
 import Button from "../components/ui/Button";
 import SelectField from "../components/ui/SelectField";
@@ -11,6 +12,7 @@ import FileUploadCard from "../components/ui/FileUploadCard";
 import Badge from "../components/ui/Badge";
 import SummaryItem from "../components/ui/SummaryItem";
 
+// redux
 import {
   fetchOnboarding,
   submitOnboarding,
@@ -21,8 +23,12 @@ import {
   setResidencyCitizen,
   setResidencyStatusType,
   setWorkAuthField,
+  setEmergencyContactField,
+  addEmergencyContact,
+  removeEmergencyContact,
 } from "../store/onboardingSlice";
 
+// left nav sections
 const SECTIONS = [
   { key: "personal", label: "Personal Details" },
   { key: "contact", label: "Address & Contact" },
@@ -32,6 +38,7 @@ const SECTIONS = [
   { key: "docs", label: "Documents & Summary" },
 ];
 
+// backend doc types  match backend enum strings
 const DOC_TYPES = {
   OPT_RECEIPT: "OPT Receipt",
   OPT_EAD: "OPT EAD",
@@ -45,13 +52,14 @@ export default function OnboardingPage() {
   const dispatch = useDispatch();
   const [active, setActive] = useState("personal");
 
+  // page state from redux
   const {
     status, // idle | loading | succeeded | failed (page-level)
     error,
     applicationStatus, // NOT_STARTED | PENDING | APPROVED | REJECTED
     hrFeedback,
     documents,
-    uploadStatusByType, // { [type]: "idle"|"uploading"|"succeeded"|"failed" }
+    uploadStatusByType, //  "idle"|"uploading"|"succeeded"|"failed" 
     uploadErrorByType,
     form,
     employee,
@@ -71,17 +79,23 @@ export default function OnboardingPage() {
     }
   }, [status, employee, dispatch, form.email, form.firstName]);
 
+  // initial load
   useEffect(() => {
     dispatch(fetchOnboarding());
   }, [dispatch]);
 
+  // once submitted + pending/approved -> lock page
   const isReadOnly =
     applicationStatus === "PENDING" || applicationStatus === "APPROVED";
 
+  // top badges (status + read-only)
   const topStatusBadge = useMemo(() => {
-    if (applicationStatus === "PENDING") return <Badge variant="warning">Pending</Badge>;
-    if (applicationStatus === "REJECTED") return <Badge variant="danger">Rejected</Badge>;
-    if (applicationStatus === "APPROVED") return <Badge variant="success">Approved</Badge>;
+    if (applicationStatus === "PENDING")
+      return <Badge variant="warning">Pending</Badge>;
+    if (applicationStatus === "REJECTED")
+      return <Badge variant="danger">Rejected</Badge>;
+    if (applicationStatus === "APPROVED")
+      return <Badge variant="success">Approved</Badge>;
     return <Badge variant="default">Not Started</Badge>;
   }, [applicationStatus]);
 
@@ -89,15 +103,17 @@ export default function OnboardingPage() {
     <Badge variant="default">{isReadOnly ? "Read-only" : "Editable"}</Badge>
   );
 
+  // ---------- docs helpers ----------
   const getDocByType = (type) => (documents || []).find((d) => d.type === type);
 
   const driverDoc = getDocByType(DOC_TYPES.DRIVER_LICENSE);
   const workAuthDoc = getDocByType(DOC_TYPES.WORK_AUTH);
   const optReceiptDoc = getDocByType(DOC_TYPES.OPT_RECEIPT);
 
-  // ----- derived fields from redux form -----
+  // ---------- derived fields from redux form ----------
   const citizenYes = !!form?.residencyStatus?.isCitizenOrPermanentResident;
-  const statusType = form?.residencyStatus?.statusType || (citizenYes ? "Citizen" : "No");
+  const statusType =
+    form?.residencyStatus?.statusType || (citizenYes ? "Citizen" : "No");
 
   const visaType = form?.residencyStatus?.workAuthorization?.type || "F1(CPT/OPT)";
   const otherVisa = form?.residencyStatus?.workAuthorization?.otherType || "";
@@ -110,7 +126,7 @@ export default function OnboardingPage() {
     ? String(form.residencyStatus.workAuthorization.endDate).slice(0, 10)
     : "";
 
-  // ----- file handlers -----
+  // ---------- file handlers ----------
   const handleDocPick = (type) => (file) => {
     if (!file) return;
 
@@ -125,7 +141,9 @@ export default function OnboardingPage() {
     }
 
     if (existing.status !== "Rejected") {
-      alert(`This document is ${existing.status}. Only rejected documents can be re-uploaded.`);
+      alert(
+        `This document is ${existing.status}. Only rejected documents can be re-uploaded.`
+      );
       return;
     }
 
@@ -159,7 +177,7 @@ export default function OnboardingPage() {
     dispatch(submitOnboarding());
   };
 
-  // ---- banner display ----
+  // ---------- banner display ----------
   const bannerNode = (() => {
     if (applicationStatus === "PENDING") {
       return (
@@ -170,15 +188,21 @@ export default function OnboardingPage() {
         />
       );
     }
+
     if (applicationStatus === "REJECTED") {
       return (
         <Banner
           type="rejected"
           title="Rejected"
-          message={hrFeedback ? `HR Feedback: ${hrFeedback}` : "Your application was rejected. Please resubmit."}
+          message={
+            hrFeedback
+              ? `HR Feedback: ${hrFeedback}`
+              : "Your application was rejected. Please resubmit."
+          }
         />
       );
     }
+
     if (applicationStatus === "APPROVED") {
       return (
         <Banner
@@ -188,6 +212,7 @@ export default function OnboardingPage() {
         />
       );
     }
+
     return (
       <Banner
         type="info"
@@ -197,7 +222,7 @@ export default function OnboardingPage() {
     );
   })();
 
-  // ---- small helpers for FileUploadCard ----
+  // ---------- small helpers for FileUploadCard ----------
   const isUploading = (type) => uploadStatusByType?.[type] === "uploading";
   const uploadErr = (type) => uploadErrorByType?.[type] || "";
 
@@ -220,8 +245,11 @@ export default function OnboardingPage() {
 
             <div className="ml-auto flex items-center gap-3">
               {status === "loading" && (
-                <span className="text-xs font-semibold text-slate-500">Loading...</span>
+                <span className="text-xs font-semibold text-slate-500">
+                  Loading...
+                </span>
               )}
+
               {error && (
                 <span className="text-xs font-semibold text-rose-600">
                   {String(error)}
@@ -234,7 +262,6 @@ export default function OnboardingPage() {
         </div>
 
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Section Nav */}
           <div className="col-span-12 md:col-span-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="space-y-3">
@@ -255,34 +282,54 @@ export default function OnboardingPage() {
           <div className="col-span-12 md:col-span-8 space-y-6">
             {/* ============ Section: Personal ============ */}
             {active === "personal" && (
-              <Card title="Personal Details" right={<Badge variant="default">Redux</Badge>}>
+              <Card
+                title="Personal Details"
+                right={<Badge variant="default">Redux</Badge>}
+              >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextField
                     label="First Name *"
                     name="firstName"
                     value={form.firstName || ""}
-                    onChange={(e) => dispatch(setField({ name: "firstName", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setField({ name: "firstName", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Last Name *"
                     name="lastName"
                     value={form.lastName || ""}
-                    onChange={(e) => dispatch(setField({ name: "lastName", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setField({ name: "lastName", value: e.target.value }))
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Middle Name"
                     name="middleName"
                     value={form.middleName || ""}
-                    onChange={(e) => dispatch(setField({ name: "middleName", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setField({ name: "middleName", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Preferred Name"
                     name="preferredName"
                     value={form.preferredName || ""}
-                    onChange={(e) => dispatch(setField({ name: "preferredName", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setField({ name: "preferredName", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
 
@@ -296,7 +343,7 @@ export default function OnboardingPage() {
                     />
                   </div>
 
-                  {/* Profile picture: 你后端 documents enum 里没有这个 type，所以暂时纯 UI */}
+                  {/* Profile picture: backend documents enum 没这个 type，所以暂时纯 UI */}
                   <div className="md:col-span-2">
                     <FileUploadCard
                       label="Profile Picture"
@@ -311,55 +358,94 @@ export default function OnboardingPage() {
 
             {/* ============ Section: Contact ============ */}
             {active === "contact" && (
-              <Card title="Address & Contact" right={<Badge variant="default">Redux</Badge>}>
+              <Card
+                title="Address & Contact"
+                right={<Badge variant="default">Redux</Badge>}
+              >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextField
                     label="Building / Apt #"
                     name="building"
                     value={form.address?.building || ""}
-                    onChange={(e) => dispatch(setAddressField({ name: "building", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setAddressField({
+                          name: "building",
+                          value: e.target.value,
+                        })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Street Name *"
                     name="street"
                     value={form.address?.street || ""}
-                    onChange={(e) => dispatch(setAddressField({ name: "street", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setAddressField({ name: "street", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="City *"
                     name="city"
                     value={form.address?.city || ""}
-                    onChange={(e) => dispatch(setAddressField({ name: "city", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setAddressField({ name: "city", value: e.target.value }))
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="State *"
                     name="state"
                     value={form.address?.state || ""}
-                    onChange={(e) => dispatch(setAddressField({ name: "state", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setAddressField({ name: "state", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Zip *"
                     name="zip"
                     value={form.address?.zip || ""}
-                    onChange={(e) => dispatch(setAddressField({ name: "zip", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setAddressField({ name: "zip", value: e.target.value }))
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Cell phone *"
                     name="phoneNumber"
                     value={form.phoneNumber || ""}
-                    onChange={(e) => dispatch(setField({ name: "phoneNumber", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setField({ name: "phoneNumber", value: e.target.value })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Work phone"
                     name="workPhoneNumber"
                     value={form.workPhoneNumber || ""}
-                    onChange={(e) => dispatch(setField({ name: "workPhoneNumber", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(
+                        setField({
+                          name: "workPhoneNumber",
+                          value: e.target.value,
+                        })
+                      )
+                    }
                     readOnly={isReadOnly}
                   />
                 </div>
@@ -374,27 +460,38 @@ export default function OnboardingPage() {
                     label="SSN *"
                     name="ssn"
                     value={form.ssn || ""}
-                    onChange={(e) => dispatch(setField({ name: "ssn", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setField({ name: "ssn", value: e.target.value }))
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <TextField
                     label="Date of Birth *"
                     name="dob"
                     type="date"
                     value={form.dob ? String(form.dob).slice(0, 10) : ""}
-                    onChange={(e) => dispatch(setField({ name: "dob", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setField({ name: "dob", value: e.target.value }))
+                    }
                     readOnly={isReadOnly}
                   />
+
                   <SelectField
                     label="Gender *"
                     name="gender"
                     value={form.gender || "I do not wish to answer"}
-                    onChange={(e) => dispatch(setField({ name: "gender", value: e.target.value }))}
+                    onChange={(e) =>
+                      dispatch(setField({ name: "gender", value: e.target.value }))
+                    }
                     disabled={isReadOnly}
                     options={[
                       { value: "Male", label: "Male" },
                       { value: "Female", label: "Female" },
-                      { value: "I do not wish to answer", label: "I do not wish to answer" },
+                      {
+                        value: "I do not wish to answer",
+                        label: "I do not wish to answer",
+                      },
                     ]}
                   />
                 </div>
@@ -403,7 +500,10 @@ export default function OnboardingPage() {
 
             {/* ============ Section: Work Authorization ============ */}
             {active === "workAuth" && (
-              <Card title="Residency & Work Authorization" right={<Badge variant="default">Redux</Badge>}>
+              <Card
+                title="Residency & Work Authorization"
+                right={<Badge variant="default">Redux</Badge>}
+              >
                 <div className="space-y-6">
                   {/* citizen / permanent resident */}
                   <div className="space-y-2">
@@ -413,7 +513,11 @@ export default function OnboardingPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4">
-                      <label className={`flex items-center gap-2 text-sm ${isReadOnly ? "text-slate-400" : "text-slate-700"}`}>
+                      <label
+                        className={`flex items-center gap-2 text-sm ${
+                          isReadOnly ? "text-slate-400" : "text-slate-700"
+                        }`}
+                      >
                         <input
                           type="radio"
                           name="citizenChoice"
@@ -425,7 +529,11 @@ export default function OnboardingPage() {
                         Yes
                       </label>
 
-                      <label className={`flex items-center gap-2 text-sm ${isReadOnly ? "text-slate-400" : "text-slate-700"}`}>
+                      <label
+                        className={`flex items-center gap-2 text-sm ${
+                          isReadOnly ? "text-slate-400" : "text-slate-700"
+                        }`}
+                      >
                         <input
                           type="radio"
                           name="citizenChoice"
@@ -439,7 +547,8 @@ export default function OnboardingPage() {
                     </div>
 
                     <div className="text-xs text-slate-500">
-                      If you select <span className="font-semibold">No</span>, please provide your work authorization details below.
+                      If you select <span className="font-semibold">No</span>,
+                      please provide your work authorization details below.
                     </div>
                   </div>
 
@@ -451,7 +560,9 @@ export default function OnboardingPage() {
                           label="Status type"
                           name="statusType"
                           value={statusType === "No" ? "Citizen" : statusType}
-                          onChange={(e) => dispatch(setResidencyStatusType(e.target.value))}
+                          onChange={(e) =>
+                            dispatch(setResidencyStatusType(e.target.value))
+                          }
                           disabled={isReadOnly}
                           options={[
                             { value: "Citizen", label: "Citizen" },
@@ -460,118 +571,430 @@ export default function OnboardingPage() {
                         />
 
                         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                          Work authorization documents are not required for citizens or permanent residents.
+                          Work authorization documents are not required for citizens
+                          or permanent residents.
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* NO: work authorization */}
-                  {!citizenYes && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-semibold text-slate-900">
-                          Work Authorization
-                        </div>
-                        {isReadOnly && <Badge variant="default">Read-only</Badge>}
-                      </div>
+                  {!citizenYes &&
+                    (() => {
+                      const isF1 = visaType === "F1(CPT/OPT)";
+                      const needsOptReceiptDoc = isF1; // F1 -> only OPT Receipt
+                      const needsWorkAuthDoc =
+                        visaType === "H1-B" ||
+                        visaType === "L2" ||
+                        visaType === "H4" ||
+                        visaType === "Other"; // non-F1 -> Work Auth
 
-                      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <SelectField
-                          label="Visa type"
-                          name="visaType"
-                          value={visaType}
-                          onChange={(e) => dispatch(setWorkAuthField({ name: "type", value: e.target.value }))}
-                          disabled={isReadOnly}
-                          options={[
-                            { value: "H1-B", label: "H1-B" },
-                            { value: "L2", label: "L2" },
-                            { value: "F1(CPT/OPT)", label: "F1 (CPT/OPT)" },
-                            { value: "H4", label: "H4" },
-                            { value: "Other", label: "Other" },
-                          ]}
-                        />
+                      return (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-semibold text-slate-900">
+                              Work Authorization
+                            </div>
+                            {isReadOnly && <Badge variant="default">Read-only</Badge>}
+                          </div>
 
-                        <TextField
-                          label="Start date"
-                          name="startDate"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => dispatch(setWorkAuthField({ name: "startDate", value: e.target.value }))}
-                          readOnly={isReadOnly}
-                        />
-                        <TextField
-                          label="End date"
-                          name="endDate"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => dispatch(setWorkAuthField({ name: "endDate", value: e.target.value }))}
-                          readOnly={isReadOnly}
-                        />
+                          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <SelectField
+                              label="Visa type"
+                              name="visaType"
+                              value={visaType}
+                              onChange={(e) =>
+                                dispatch(
+                                  setWorkAuthField({
+                                    name: "type",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              disabled={isReadOnly}
+                              options={[
+                                { value: "H1-B", label: "H1-B" },
+                                { value: "L2", label: "L2" },
+                                { value: "F1(CPT/OPT)", label: "F1 (CPT/OPT)" },
+                                { value: "H4", label: "H4" },
+                                { value: "Other", label: "Other" },
+                              ]}
+                            />
 
-                        {visaType === "Other" && (
-                          <div className="md:col-span-2">
                             <TextField
-                              label="Specify visa title"
-                              name="otherVisa"
-                              value={otherVisa}
-                              onChange={(e) => dispatch(setWorkAuthField({ name: "otherType", value: e.target.value }))}
-                              placeholder="e.g., TN, O-1..."
+                              label="Start date"
+                              name="startDate"
+                              type="date"
+                              value={startDate}
+                              onChange={(e) =>
+                                dispatch(
+                                  setWorkAuthField({
+                                    name: "startDate",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
                               readOnly={isReadOnly}
                             />
+
+                            <TextField
+                              label="End date"
+                              name="endDate"
+                              type="date"
+                              value={endDate}
+                              onChange={(e) =>
+                                dispatch(
+                                  setWorkAuthField({
+                                    name: "endDate",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            {visaType === "Other" && (
+                              <div className="md:col-span-2">
+                                <TextField
+                                  label="Specify visa title"
+                                  name="otherVisa"
+                                  value={otherVisa}
+                                  onChange={(e) =>
+                                    dispatch(
+                                      setWorkAuthField({
+                                        name: "otherType",
+                                        value: e.target.value,
+                                      })
+                                    )
+                                  }
+                                  placeholder="e.g., TN, O-1..."
+                                  readOnly={isReadOnly}
+                                />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Upload cards */}
-                      <div className="mt-4 space-y-3">
-                        <FileUploadCard
-                          label="Work Authorization Document "
-                          required
-                          hint="Upload a PDF or image (blank PDFs are fine for testing)."
-                          fileName={workAuthDoc?.fileName || ""}
-                          disabled={isReadOnly}
-                          status={workAuthDoc?.status}
-                          feedback={workAuthDoc?.feedback}
-                          uploading={isUploading(DOC_TYPES.WORK_AUTH)}
-                          error={uploadErr(DOC_TYPES.WORK_AUTH)}
-                          onPick={handleDocPick(DOC_TYPES.WORK_AUTH)}
-                          onPreview={handlePreview(workAuthDoc)}
-                          onDownload={handleDownload(workAuthDoc)}
-                        />
+                          {/* Upload cards (only ONE required doc depending on visaType) */}
+                          <div className="mt-4 space-y-3">
+                            {/* F1 -> ONLY OPT Receipt */}
+                            {needsOptReceiptDoc && (
+                              <FileUploadCard
+                                label="OPT Receipt (required for F1 CPT/OPT) "
+                                required
+                                hint="Upload a PDF (blank PDF is fine for testing)."
+                                fileName={optReceiptDoc?.fileName || ""}
+                                disabled={isReadOnly}
+                                status={optReceiptDoc?.status}
+                                feedback={optReceiptDoc?.feedback}
+                                uploading={isUploading(DOC_TYPES.OPT_RECEIPT)}
+                                error={uploadErr(DOC_TYPES.OPT_RECEIPT)}
+                                onPick={handleDocPick(DOC_TYPES.OPT_RECEIPT)}
+                                onPreview={handlePreview(optReceiptDoc)}
+                                onDownload={handleDownload(optReceiptDoc)}
+                              />
+                            )}
 
-                        {visaType === "F1(CPT/OPT)" && (
-                          <FileUploadCard
-                            label="OPT Receipt (required for F1 CPT/OPT) "
-                            required
-                            hint="Upload a PDF (blank PDF is fine for testing)."
-                            fileName={optReceiptDoc?.fileName || ""}
-                            disabled={isReadOnly}
-                            status={optReceiptDoc?.status}
-                            feedback={optReceiptDoc?.feedback}
-                            uploading={isUploading(DOC_TYPES.OPT_RECEIPT)}
-                            error={uploadErr(DOC_TYPES.OPT_RECEIPT)}
-                            onPick={handleDocPick(DOC_TYPES.OPT_RECEIPT)}
-                            onPreview={handlePreview(optReceiptDoc)}
-                            onDownload={handleDownload(optReceiptDoc)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
+                            {/* H1B/L2/H4/Other -> ONLY Work Authorization */}
+                            {needsWorkAuthDoc && (
+                              <FileUploadCard
+                                label="Work Authorization Document "
+                                required
+                                hint="Upload a PDF or image (blank PDFs are fine for testing)."
+                                fileName={workAuthDoc?.fileName || ""}
+                                disabled={isReadOnly}
+                                status={workAuthDoc?.status}
+                                feedback={workAuthDoc?.feedback}
+                                uploading={isUploading(DOC_TYPES.WORK_AUTH)}
+                                error={uploadErr(DOC_TYPES.WORK_AUTH)}
+                                onPick={handleDocPick(DOC_TYPES.WORK_AUTH)}
+                                onPreview={handlePreview(workAuthDoc)}
+                                onDownload={handleDownload(workAuthDoc)}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                 </div>
               </Card>
             )}
 
             {/* ============ Section: Reference & Emergency ============ */}
             {active === "refEmergency" && (
-              <Card title="Reference & Emergency" right={<Badge variant="default">Later</Badge>}>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">
-                    Reference (UI placeholder)
+              <Card
+                title="Reference & Emergency"
+                right={<Badge variant="default">Redux</Badge>}
+              >
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-slate-900">
+                        Reference
+                      </div>
+                      {isReadOnly && <Badge variant="default">Read-only</Badge>}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <TextField
+                        label="First Name"
+                        value={form.reference?.firstName || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                firstName: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+
+                      <TextField
+                        label="Last Name"
+                        value={form.reference?.lastName || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                lastName: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+
+                      <TextField
+                        label="Middle Name"
+                        value={form.reference?.middleName || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                middleName: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+
+                      <TextField
+                        label="Phone"
+                        value={form.reference?.phone || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                phone: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+
+                      <TextField
+                        label="Email"
+                        value={form.reference?.email || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                email: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+
+                      <TextField
+                        label="Relationship"
+                        value={form.reference?.relationship || ""}
+                        onChange={(e) =>
+                          dispatch(
+                            setField({
+                              name: "reference",
+                              value: {
+                                ...(form.reference || {}),
+                                relationship: e.target.value,
+                              },
+                            })
+                          )
+                        }
+                        readOnly={isReadOnly}
+                      />
+                    </div>
+
+                    <div className="mt-3 text-xs text-slate-500">
+                      Reference is optional unless your backend requires it later.
+                    </div>
                   </div>
-                  <div className="mt-4 text-xs text-slate-500">
-                    You already have emergencyContacts reducers in slice — we can wire this section next.
+
+                  {/* ---------- Emergency Contacts  ---------- */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          Emergency Contacts <span className="text-rose-600">*</span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          At least 1 contact is required.
+                        </div>
+                      </div>
+
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          onClick={() => dispatch(addEmergencyContact())}
+                        >
+                          + Add
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      {(form.emergencyContacts || []).map((c, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="text-sm font-semibold text-slate-900">
+                              Contact #{idx + 1}
+                            </div>
+
+                            {!isReadOnly && (
+                              <button
+                                type="button"
+                                className="rounded-md px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                                onClick={() => dispatch(removeEmergencyContact(idx))}
+                                disabled={(form.emergencyContacts || []).length <= 1}
+                                title={
+                                  (form.emergencyContacts || []).length <= 1
+                                    ? "At least 1 emergency contact is required"
+                                    : "Remove"
+                                }
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <TextField
+                              label="First Name *"
+                              value={c.firstName || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "firstName",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            <TextField
+                              label="Last Name *"
+                              value={c.lastName || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "lastName",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            <TextField
+                              label="Middle Name"
+                              value={c.middleName || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "middleName",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            <TextField
+                              label="Phone *"
+                              value={c.phone || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "phone",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            <TextField
+                              label="Email *"
+                              value={c.email || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "email",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+
+                            <TextField
+                              label="Relationship *"
+                              value={c.relationship || ""}
+                              onChange={(e) =>
+                                dispatch(
+                                  setEmergencyContactField({
+                                    index: idx,
+                                    name: "relationship",
+                                    value: e.target.value,
+                                  })
+                                )
+                              }
+                              readOnly={isReadOnly}
+                            />
+                          </div>
+
+                          {/* quick missing hint */}
+                          {!isReadOnly && (
+                            <div className="mt-3 text-xs text-slate-500">
+                              Required: first name, last name, phone, email, relationship.
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -579,7 +1002,10 @@ export default function OnboardingPage() {
 
             {/* ============ Section: Documents & Summary ============ */}
             {active === "docs" && (
-              <Card title="Documents & Summary" right={<Badge variant="default">Redux</Badge>}>
+              <Card
+                title="Documents & Summary"
+                right={<Badge variant="default">Redux</Badge>}
+              >
                 <div className="space-y-3">
                   <FileUploadCard
                     label="Driver’s License "
@@ -598,59 +1024,91 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">
-                    Summary
-                  </div>
+                  <div className="text-sm font-semibold text-slate-900">Summary</div>
 
-                  <div className="mt-3 space-y-2">
-                    <SummaryItem
-                      label="First name"
-                      status={form.firstName ? "ok" : "missing"}
-                      value={form.firstName || ""}
-                    />
-                    <SummaryItem
-                      label="Last name"
-                      status={form.lastName ? "ok" : "missing"}
-                      value={form.lastName || ""}
-                    />
-                    <SummaryItem
-                      label="Driver’s License"
-                      status={driverDoc?.fileName ? "ok" : "missing"}
-                      value={driverDoc?.fileName || ""}
-                    />
-                    <SummaryItem
-                      label="Work Authorization"
-                      status={citizenYes ? "info" : (workAuthDoc?.fileName ? "ok" : "missing")}
-                      value={citizenYes ? "Not required" : (workAuthDoc?.fileName || "")}
-                    />
-                    <SummaryItem
-                      label="OPT Receipt (if F1)"
-                      status={
-                        visaType === "F1(CPT/OPT)"
-                          ? (optReceiptDoc?.fileName ? "ok" : "missing")
-                          : "info"
-                      }
-                      value={
-                        visaType === "F1(CPT/OPT)"
-                          ? (optReceiptDoc?.fileName || "")
-                          : "Not required"
-                      }
-                    />
-                  </div>
+                  {(() => {
+                    const isF1 = visaType === "F1(CPT/OPT)";
+                    const needsOptReceiptDoc = !citizenYes && isF1; // only when NOT citizen and F1
+                    const needsWorkAuthDoc =
+                      !citizenYes &&
+                      (visaType === "H1-B" ||
+                        visaType === "L2" ||
+                        visaType === "H4" ||
+                        visaType === "Other");
 
-                  <div className="mt-4">
-                    <Button
-                      disabled={isReadOnly || applicationStatus === "APPROVED" || status === "loading"}
-                      onClick={onSubmit}
-                    >
-                      {applicationStatus === "REJECTED" ? "Resubmit Application" : "Submit Application"}
-                    </Button>
+                    return (
+                      <>
+                        <div className="mt-3 space-y-2">
+                          <SummaryItem
+                            label="First name"
+                            status={form.firstName ? "ok" : "missing"}
+                            value={form.firstName || ""}
+                          />
 
-                    <div className="mt-2 text-xs text-slate-500">
-                      Status: <span className="font-semibold">{applicationStatus}</span>
-                      {status === "loading" && <span className="ml-2">(working...)</span>}
-                    </div>
-                  </div>
+                          <SummaryItem
+                            label="Last name"
+                            status={form.lastName ? "ok" : "missing"}
+                            value={form.lastName || ""}
+                          />
+
+                          <SummaryItem
+                            label="Driver’s License"
+                            status={driverDoc?.fileName ? "ok" : "missing"}
+                            value={driverDoc?.fileName || ""}
+                          />
+
+                          {/* Citizen/GC -> not required */}
+                          {citizenYes && (
+                            <SummaryItem
+                              label="Work Authorization"
+                              status="info"
+                              value="Not required"
+                            />
+                          )}
+
+                          {/* Non-citizen -> only one required doc based on visa type */}
+                          {!citizenYes && needsWorkAuthDoc && (
+                            <SummaryItem
+                              label="Work Authorization"
+                              status={workAuthDoc?.fileName ? "ok" : "missing"}
+                              value={workAuthDoc?.fileName || ""}
+                            />
+                          )}
+
+                          {!citizenYes && needsOptReceiptDoc && (
+                            <SummaryItem
+                              label="OPT Receipt"
+                              status={optReceiptDoc?.fileName ? "ok" : "missing"}
+                              value={optReceiptDoc?.fileName || ""}
+                            />
+                          )}
+                        </div>
+
+                        <div className="mt-4">
+                          <Button
+                            disabled={
+                              isReadOnly ||
+                              applicationStatus === "APPROVED" ||
+                              status === "loading"
+                            }
+                            onClick={onSubmit}
+                          >
+                            {applicationStatus === "REJECTED"
+                              ? "Resubmit Application"
+                              : "Submit Application"}
+                          </Button>
+
+                          <div className="mt-2 text-xs text-slate-500">
+                            Status:{" "}
+                            <span className="font-semibold">{applicationStatus}</span>
+                            {status === "loading" && (
+                              <span className="ml-2">(working...)</span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </Card>
             )}

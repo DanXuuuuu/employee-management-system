@@ -8,7 +8,8 @@ const registrationRoutes = require('./routes/registrationRoutes')
 const path = require('path');
 const onboardingRoutes = require('./routes/onboardingRoutes');
 const hrRoutes = require('./routes/hrRoutes')
-const documentRoutes = require('./routes/documentRoutes');
+const documentRoutes = require("./routes/documentRoutes");
+const personalInfoRoutes = require("./routes/personalInfoRoutes");
 
 
 dotenv.config();

@@ -6,7 +6,8 @@ export default function MainLayout() {
   const { pathname } = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((s) => s.auth);
+  const { isAuthenticated, user } = useSelector((s) => s.auth);
+  const role = user?.role;
 
   const handleLogout = () => {
     const isConfirmed = window.confirm("Are you sure you want to log out? Any unsaved changes may be lost.");
@@ -16,13 +17,22 @@ export default function MainLayout() {
   }
 };
 
-  const navLinks = [
+  const hrNavLinks = [
     { path: "/hr/home", label: "Home" },
     { path: "/hr/employees", label: "Employee Profiles" },
     { path: "/hr/visa", label: "Visa Status Management" },
     { path: "/hr/hiring", label: "Hiring Management" },
   ];
 
+  const employeeNavLinks = [
+    { path: "/onboarding", label: "Onboarding" },
+    { path: "/personal-info", label: "Personal Info" },
+    { path: "/employee/visa", label: "Visa Status" },
+  ];
+
+  const navLinks =
+  role === "HR" ? hrNavLinks : role === "Employee" ? employeeNavLinks : [];
+  
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="h-14 bg-white shadow flex items-center justify-between px-6 sticky top-0 z-50">
