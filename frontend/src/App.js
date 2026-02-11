@@ -5,11 +5,12 @@ import MainLayout from '../src/components/layout/MainLayout';
 import Register from "./pages/Register";
 import OnboardingPage from "./pages/OnboardingPage";
 import PersonalInfo from "./pages/PersonalInfo";
+import VisaStatusManagementPage from "./pages/VisaStatusManagementPage"
 import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
-import { restoreSession } from "./store/slices/authSlice";
+import { restoreSession } from "./store/authSlice";
 import { useSelector,useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -57,7 +58,7 @@ function App() {
             onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
           } />
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/employee/visa" element={<div>Employee Visa Page</div>} />
+          <Route path="/employee/visa" element={<VisaStatusManagementPage/>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
