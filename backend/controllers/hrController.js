@@ -26,14 +26,14 @@ exports.getTokenHistory = async (req, res, next) => {
 exports.getOnboardingApplications = async (req, res, next) => {
   try {
     const employees = await Employee.find({
-      applicationStatus: { $in: ['Pending', 'Approved', 'Rejected'] },
+     applicationStatus: { $in: ['PENDING', 'APPROVED', 'REJECTED'] },
     })
       .populate('user', 'username email')
       .sort({ createdAt: -1 });
 
-    const pending = employees.filter((e) => e.applicationStatus === 'Pending');
-    const approved = employees.filter((e) => e.applicationStatus === 'Approved');
-    const rejected = employees.filter((e) => e.applicationStatus === 'Rejected');
+    const pending = employees.filter((e) => e.applicationStatus === 'PENDING');    
+    const approved = employees.filter((e) => e.applicationStatus === 'APPROVED');  
+    const rejected = employees.filter((e) => e.applicationStatus === 'REJECTED');  
 
     res.status(200).json({
       success: true,
@@ -50,7 +50,7 @@ exports.approveOnboarding = async (req, res, next) => {
   try {
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
-      { applicationStatus: 'Approved', hrFeedback: '' },
+      { applicationStatus: 'APPROVED', hrFeedback: '' },
       { new: true }
     );
 
@@ -83,7 +83,7 @@ exports.rejectOnboarding = async (req, res, next) => {
 
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
-      { applicationStatus: 'Rejected', hrFeedback: feedback },
+      { applicationStatus: 'REJECTED', hrFeedback: feedback },
       { new: true }
     );
 

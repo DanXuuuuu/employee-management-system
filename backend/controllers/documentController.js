@@ -1,4 +1,19 @@
-const Document = require('../models/Document');
+const Document = require("../models/Document");
+const Employee = require('../models/Employee');
+const upload = require('../uploads/upload');
+const fs = require('fs');
+const path = require('path');
+
+const ALLOWED_TYPES = [
+  "OPT Receipt",
+  "OPT EAD",
+  "I-983",
+  "I-20",
+  "Driver License",
+  "Work Authorization",
+];
+
+
 
 /**
  * GET /api/documents
@@ -8,10 +23,10 @@ exports.getMyDocuments = async (req, res, next) => {
     const userId = req.user._id;
     const docs = await Document.find({ owner: userId }).sort({ createdAt: -1 });
 
-    // 修改：使用 ok 对齐前端 Slice
+
     res.json({
       ok: true,
-      data: docs
+      data: docs.map((d) => d.toObject()) //doc 
     });
   } catch (err) {
     next(err);
@@ -20,13 +35,18 @@ exports.getMyDocuments = async (req, res, next) => {
 
 /**
  * POST /api/documents
+ * multipart/form-data:
+ * - type: string
+ * - file: file
  */
+ 
+
 exports.uploadDocument = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { type } = req.body;
 
-    // 校验参数：使用 ok
+
     if (!type || !ALLOWED_TYPES.includes(type)) {
       return res.status(400).json({ ok: false, message: "Invalid document type." });
     }
@@ -34,6 +54,7 @@ exports.uploadDocument = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ ok: false, message: "File is required." });
     }
+
 
     const existing = await Document.findOne({ owner: userId, type });
     if (existing) {
@@ -43,19 +64,17 @@ exports.uploadDocument = async (req, res, next) => {
       });
     }
 
-    const isAutoApprove = type === "Driver License"; 
-    const initialStatus = isAutoApprove ? "Approved" : "Pending";
 
-    const fileUrl = `/uploads/${req.file.filename}`;
     const doc = await Document.create({
       owner: userId,
       type,
-      fileUrl,
+      fileUrl: `/uploads/${req.file.filename}`,
       fileKey: req.file.filename,
       fileName: req.file.originalname,
-      status: initialStatus,
+      status: "Pending",
       feedback: "",
     });
+
 
     await Employee.findOneAndUpdate(
       { user: userId },
@@ -65,8 +84,8 @@ exports.uploadDocument = async (req, res, next) => {
 
     return res.status(201).json({
       ok: true,
-      data: doc,
-      message: isAutoApprove ? "Document auto-approved." : "Document uploaded, status is Pending."
+      data: doc.toObject(),
+      message: "Document uploaded successfully. Status is now Pending."
     });
   } catch (err) {
     next(err);
@@ -74,7 +93,7 @@ exports.uploadDocument = async (req, res, next) => {
 };
 /**
  * PUT /api/documents/:id
- * 重新上传被 HR 拒绝的文档
+
  */
 exports.reuploadDocument = async (req, res, next) => {
   try {
@@ -85,13 +104,13 @@ exports.reuploadDocument = async (req, res, next) => {
       return res.status(400).json({ ok: false, message: "New file is required." });
     }
 
-    // 1. 查找旧文档并验证所有权
     const doc = await Document.findOne({ _id: id, owner: userId });
+
     if (!doc) {
       return res.status(404).json({ ok: false, message: "Document not found." });
     }
 
-    // 2. 状态校验：只有 Rejected 状态允许重传
+
     if (doc.status !== "Rejected") {
       return res.status(409).json({
         ok: false,
@@ -99,15 +118,7 @@ exports.reuploadDocument = async (req, res, next) => {
       });
     }
 
-    // 3. 物理删除旧文件 (可选，防止服务器确存堆积)
-    if (doc.fileKey) {
-      const oldPath = path.join(__dirname, '../uploads', doc.fileKey);
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
-    }
 
-    // 4. 更新文档信息并重置状态为 Pending
     doc.fileUrl = `/uploads/${req.file.filename}`;
     doc.fileKey = req.file.filename;
     doc.fileName = req.file.originalname;
@@ -116,13 +127,168 @@ exports.reuploadDocument = async (req, res, next) => {
 
     await doc.save();
 
-    // 5. 返回 ok 结构对齐前端 Slice
+
     return res.json({
       ok: true,
-      data: doc,
-      message: "Document re-uploaded. Status reset to Pending."
+      data: doc.toObject(),
+      message: "Document re-uploaded. Status has been reset to Pending."
     });
   } catch (err) {
     next(err);
   }
 };
+
+/**
+ * GET /api/documents/download/:id
+ */
+// employee could download docs, hr also do
+
+exports.downloadDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+  
+    const doc = await Document.findById(id);
+    if (!doc) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Document not found." 
+      });
+    }
+
+
+    const isOwner = doc.owner.toString() === userId.toString();
+    const isHR = userRole === 'HR';
+
+    if (!isOwner && !isHR) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You don't have permission to access this document." 
+      });
+    }
+
+
+    const filePath = path.join(__dirname, '../uploads', doc.fileKey);
+
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "File not found on server." 
+      });
+    }
+
+
+    res.download(filePath, doc.fileName, (err) => {
+      if (err) {
+        console.error('Download error:', err);
+        return res.status(500).json({ 
+          success: false, 
+          message: "Error downloading file." 
+        });
+      }
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// preview doc /**
+// GET /api/documents/preview/:id
+ 
+exports.previewDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+  
+    const doc = await Document.findById(id);
+    if (!doc) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Document not found." 
+      });
+    }
+
+    // 2. 权限检查
+    const isOwner = doc.owner.toString() === userId.toString();
+    const isHR = userRole === 'HR';
+
+    if (!isOwner && !isHR) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You don't have permission to access this document." 
+      });
+    }
+
+
+    const filePath = path.join(__dirname, '../uploads', doc.fileKey);
+
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "File not found on server." 
+      });
+    }
+
+
+    const ext = path.extname(doc.fileName).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    if (ext === '.pdf') {
+      contentType = 'application/pdf';
+    } else if (['.jpg', '.jpeg'].includes(ext)) {
+      contentType = 'image/jpeg';
+    } else if (ext === '.png') {
+      contentType = 'image/png';
+    }
+
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${doc.fileName}"`);
+    
+  
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+/**
+ * GET /api/documents/employee/:employeeId
+ */
+
+// hr fetch the specifci employee of docs
+exports.getEmployeeDocuments = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+
+    const employee = await Employee.findById(employeeId).populate('documents');
+    
+    if (!employee) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Employee not found." 
+      });
+    }
+
+    
+    res.json({
+      success: true,
+      data: employee.documents
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+

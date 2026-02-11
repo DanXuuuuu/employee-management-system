@@ -1,26 +1,38 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
-
-// 修复 1：确保路径指向正确的 middleware 文件夹
-const upload = require("../uploads/upload"); 
-
+const { protect, restrictTo } = require("../middleware/authMiddleware");
+const  upload  = require("../uploads/upload");
 const {
   getMyDocuments,
   uploadDocument,
   reuploadDocument,
+  downloadDocument,
+  getEmployeeDocuments,
+  previewDocument
 } = require("../controllers/documentController");
+
+
+// The specific route should be placed before the dynamic route
 
 // GET /api/documents
 router.get("/", protect, getMyDocuments);
 
-// 修复 2：必须重新加上 upload.single("file") 中间件，否则后端拿不到文件
-// POST /api/documents (上传新文档)
+// hr fetch all files of one specific employee 
+router.get("/employee/:employeeId", protect, restrictTo('HR'), getEmployeeDocuments);
+
+// preview doc
+router.get("/preview/:id", protect, previewDocument);
+
+// download docs (employeee and hr both could do)
+router.get("/download/:id", protect, downloadDocument);
+
+// POST /api/documents  (upload new)
 router.post("/", protect, upload.single("file"), uploadDocument);
 
-// 修复 3：PUT 接口同样需要 Multer 中间件处理重新上传的文件流
-// PUT /api/documents/:id (重新上传被拒绝的文档)
-router.put("/:id", protect, upload.single("file"), reuploadDocument);
+
+// PUT /api/documents/:id (reupload doc for rejected doc)
+router.put("/:id", protect,  reuploadDocument);
+
 
 module.exports = router;
