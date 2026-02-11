@@ -60,10 +60,10 @@ export const rejectApplication = createAsyncThunk(
 // generate token
 export const generateToken = createAsyncThunk(
   "hr/generateToken",
-  async ({ email }, { rejectWithValue }) => {
+  async ({ email, name }, { rejectWithValue }) => { // 添加 name
     try {
-      const res = await api.post("/registration/generate", { email });
-      return res.data.data; // return token 
+      const res = await api.post("/registration/generate", { email, name });
+      return res.data.data; 
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to generate token");
     }

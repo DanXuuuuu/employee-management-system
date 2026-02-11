@@ -16,21 +16,19 @@ exports.generateRegistrationToken = async (req, res, next) => {
             return next(err);
         }
 
-        const existingToken = await Registration.findOne({ email, status: 'sent' });
-        if (existingToken) {
-            const err = new Error('A valid registration link has already been sent to this email');
-            err.statusCode = 400;
-            return next(err);
-        }
-
         const token = crypto.randomBytes(20).toString('hex');
 
-        const registration = await Registration.create({
-            email,
-            name,
-            token
-        });
-
+      
+        const registration = await Registration.findOneAndUpdate(
+            { email },
+            { 
+                name, 
+                token, 
+                status: 'sent',
+                createdAt: new Date() 
+            },
+            { upsert: true, new: true }
+        );
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         const registrationUrl = `${frontendUrl}/register?token=${token}&email=${email}`;
         const message = `Hello ${name},\n\nWelcome to the team! 
@@ -46,12 +44,13 @@ exports.generateRegistrationToken = async (req, res, next) => {
 
             res.status(200).json({
                 success: true,
+                ok: true,
                 message: 'Registration link generated and email sent successfully'
             });
 
         } catch (err) {
             
-            await Registration.findByIdAndDelete(registration._id);
+            console.error("Mail Transport Error:", err);
             const error = new Error('There was an error sending the email. Try again later.');
             error.statusCode = 500;
             return next(error);

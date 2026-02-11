@@ -16,16 +16,15 @@ const generateToken = (userId, role) => {
 exports.signup = async (req, res, next) => {
   try {
     const { email, username, password, confirmPassword, registrationToken, token } = req.body;
-    const regToken = registrationToken || token; // ✅ 兼容两种字段名
+    const regToken = registrationToken || token; 
 
-    // ✅ 必填校验
+
     if (!email || !username || !password || !confirmPassword || !regToken) {
       const err = new Error('Please fill in all fields, including the registration token');
       err.statusCode = 400;
       return next(err);
     }
-
-    // ✅ 密码一致校验
+ 
     if (password !== confirmPassword) {
       const err = new Error('Passwords do not match');
       err.statusCode = 400;
@@ -45,7 +44,7 @@ exports.signup = async (req, res, next) => {
       return next(err);
     }
 
-    // ✅ 检查用户是否已存在
+
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       const err = new Error('User email or username already exists');
@@ -53,7 +52,7 @@ exports.signup = async (req, res, next) => {
       return next(err);
     }
 
-    // ✅ 创建用户
+
     const newUser = new User({
       email,
       username,
@@ -62,11 +61,11 @@ exports.signup = async (req, res, next) => {
 
     await newUser.save();
 
-    // ✅ 标记 token 已使用
+
     validToken.status = 'used';
     await validToken.save();
 
-    // ✅ 返回登录 token（注意别和 req.body 的 token 同名冲突）
+
     const authToken = generateToken(newUser._id, newUser.role);
 
     res.status(201).json({

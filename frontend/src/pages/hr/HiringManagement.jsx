@@ -22,7 +22,7 @@ export default function HiringManagement() {
   useEffect(() => {
     dispatch(fetchTokenHistory());
     dispatch(fetchOnboardingApplications());
-  }, []);
+  }, [dispatch]);
 
   // dealwith success message 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function HiringManagement() {
     setMessage('');
 
     // dispatch return Promise and check result 
-    const result = await dispatch(generateToken({ email }));
+    const result = await dispatch(generateToken({ email, name }));
     
     // success - clean form
     if (result.type.endsWith('fulfilled')) {
@@ -194,20 +194,20 @@ export default function HiringManagement() {
                 </tr>
               ) : (
                 tokenHistory.map((token) => (
-                  <tr key={token._id} className="border-t">
-                    <td className="px-4 py-2">{token.email}</td>
-                    <td className="px-4 py-2">{token.name}</td>
+                  <tr key={token?._id || Math.random()} className="border-t">
+                    <td className="px-4 py-2">{token?.email || 'N/A'}</td>
+                    <td className="px-4 py-2">{token?.name || 'N/A'}</td>
                     <td className="px-4 py-2">
                       <span className={`px-2 py-1 rounded text-xs ${
-                        token.status === 'used'
+                        token?.status === 'used'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-yellow-100 text-yellow-700'
                       }`}>
-                        {token.status}
+                        {token?.status || 'unknown' }
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      {new Date(token.createdAt).toLocaleDateString()}
+                      {token?.createdAt ? new Date(token.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                   </tr>
                 ))

@@ -11,6 +11,8 @@ import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
 import { useSelector } from "react-redux";
 import DocumentManagement from './pages/DocumentManagement';
+import VisaStatusManagementPage from './pages/VisaStatusManagementPage';
+
 
 function App() {
   const { isAuthenticated, user } = useSelector((s) => s.auth);
@@ -50,7 +52,7 @@ function App() {
             onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
           } />
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/employee/visa" element={<div>Employee Visa Page</div>} />
+          <Route path="/visa-status" element={<VisaStatusManagementPage />} />
           <Route path="/documents" element={<DocumentManagement />} />
         </Route>
 

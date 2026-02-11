@@ -15,7 +15,7 @@ const sendEmail = async (options) => {
 
     // 2. define email content
     const mailOptions = {
-        from: `CRM System Team <${process.env.EMAIL_FROM}>`,
+        from: `CRM System Team <${process.env.EMAIL_USER}>`,
         to: options.email,
         subject: options.subject,
         text: options.message,
@@ -23,7 +23,12 @@ const sendEmail = async (options) => {
     };
 
     // 3. send email
-    await transporter.sendMail(mailOptions);
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error("Nodemailer Error:", error.message);
+        throw error; 
+    }
 };
 
 module.exports = sendEmail;

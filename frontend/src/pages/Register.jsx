@@ -41,7 +41,7 @@ export default function Register() {
     if (signUp.success) {
 
       // if login succuss go to portal - could be replaced later
-      navigate("/employee/visa");
+      navigate("/onboarding");
       dispatch(clearSignUpStatus());
     }
   }, [signUp.success, dispatch, navigate]);

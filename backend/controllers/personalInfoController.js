@@ -7,7 +7,7 @@ exports.getPersonalInfo = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // 必须填充 documents 以便用户在 Personal Info 页预览/下载
+ 
     const employee = await Employee.findOne({ user: userId }).populate('documents');
     
     if (!employee) {
@@ -56,7 +56,7 @@ exports.updatePersonalInfoSection = async (req, res, next) => {
     }
 
     if (section === "employment") {
-      // 映射到 residencyStatus.workAuthorization
+  
       if ("visaTitle" in payload) $set["residencyStatus.workAuthorization.type"] = payload.visaTitle;
       if ("startDate" in payload) $set["residencyStatus.workAuthorization.startDate"] = payload.startDate;
       if ("endDate" in payload) $set["residencyStatus.workAuthorization.endDate"] = payload.endDate;
@@ -64,7 +64,7 @@ exports.updatePersonalInfoSection = async (req, res, next) => {
     }
 
     if (section === "emergency") {
-      // 文档约定：个人信息页编辑单个紧急联系人
+  
       if (payload.emergencyContact) {
         $set.emergencyContacts = [payload.emergencyContact];
       }

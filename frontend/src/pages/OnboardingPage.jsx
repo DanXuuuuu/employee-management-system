@@ -1008,7 +1008,7 @@ export default function OnboardingPage() {
               >
                 <div className="space-y-3">
                   <FileUploadCard
-                    label="Driver’s License "
+                    label="Driver's License "
                     required
                     hint="PDF or image."
                     fileName={driverDoc?.fileName || ""}
