@@ -57,11 +57,13 @@ function App() {
           <Route path="/personal-info" element={
             onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
           } />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/employee/visa" element={<VisaStatusManagementPage/>} />
+          <Route path="/onboarding" element={
+          onboardingStatus === "Approved" ?  <Navigate to="/personal-info" replace /> :<OnboardingPage />
+          } />
+          <Route path="/visa-status" element={<VisaStatusManagementPage/>} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
