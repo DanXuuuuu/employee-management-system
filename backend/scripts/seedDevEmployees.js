@@ -34,14 +34,14 @@ async function seed() {
  
   //   create 8 employees  
   const appStatuses = [
-    "Pending",
-    "Approved",
-    "Rejected",
-    "Pending",
-    "Approved",
-    "Pending",
-    "Rejected",
-    "Approved",
+    "PENDING",    
+    "APPROVED",   
+    "REJECTED",  
+    "PENDING",
+    "APPROVED",
+    "PENDING",
+    "REJECTED",
+    "APPROVED",
   ];
 
   const employeesPayloads = users.map((user, i) => ({
@@ -97,6 +97,7 @@ async function seed() {
       feedback: "",
       fileUrl: DEV_FILE("u1_opt_receipt"),
       fileKey: DEV_FILE_KEY("u1_opt_receipt"),
+      fileName: "u1_opt_receipt.pdf",
     },
     {
       owner: users[0]._id,
@@ -105,6 +106,7 @@ async function seed() {
       feedback: "",
       fileUrl: DEV_FILE("u1_opt_ead"),
       fileKey: DEV_FILE_KEY("u1_opt_ead"),
+      fileName: "u1_opt_receipt.pdf",
     },
 
     // user2
@@ -115,6 +117,7 @@ async function seed() {
       feedback: "",
       fileUrl: DEV_FILE("u2_opt_receipt"),
       fileKey: DEV_FILE_KEY("u2_opt_receipt"),
+      fileName: "u2_opt_receipt.pdf",
     },
     {
       owner: users[1]._id,
@@ -123,6 +126,7 @@ async function seed() {
       feedback: "blurry", 
       fileUrl: DEV_FILE("u2_opt_ead"),
       fileKey: DEV_FILE_KEY("u2_opt_ead"),
+      fileName: "u2_opt_receipt.pdf",
     },
 
     // user4
@@ -133,21 +137,21 @@ async function seed() {
       feedback: "",
       fileUrl: DEV_FILE("u4_opt_receipt"),
       fileKey: DEV_FILE_KEY("u4_opt_receipt"),
+      fileName: "u4_opt_receipt.pdf",
     },
   ];
 
   // Only insert if actually have Document model
   if (Document) { 
-    await Document.insertMany(
-      docs.map((d) => ({  
-        owner: d.owner,
-        type: steps.includes(d.type) ? d.type : "OPT Receipt",
-        status: d.status,
-        feedback: d.feedback || "",
-        fileUrl: d.fileUrl,
-        fileKey: `DEV_SEED/${d.owner}_${d.type}.pdf`,
-      }))
-    );
+    const createdDocs = await Document.insertMany(docs);
+    
+    //  relate docs to Employee
+    for (const doc of createdDocs) {
+      await Employee.findOneAndUpdate(
+        { user: doc.owner },
+        { $addToSet: { documents: doc._id } }
+      );
+    }
   }
 
   console.log("Dev employees seeded:", employees.length);
