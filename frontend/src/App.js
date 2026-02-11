@@ -18,7 +18,7 @@ import { useEffect } from "react";
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((s) => s.auth);
+  const { isAuthenticated, user, restore } = useSelector((s) => s.auth);
   const role = user?.role;
   const onboardingStatus = user?.applicationStatus;
   
@@ -34,8 +34,12 @@ function App() {
     // after refresh, verify token and restore user
     dispatch(restoreSession());
   }, [dispatch]);
-
+  
+  if (restore.loading) {
+    return <div>Loading...</div>; 
+  }
   return (
+
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -47,7 +51,7 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* --- HR Protected Group --- */}
-        <Route element={isAuthenticated && role === "HR" ? <MainLayout /> : <Navigate to="/login" replace />}>
+        <Route element={isAuthenticated && user && role === "HR" ? <MainLayout /> : <Navigate to="/login" replace />}>
           <Route path='/hr/home' element={<HrHome />} />
           <Route path='/hr/hiring' element={<HiringManagement />} />
           <Route path='/hr/employees' element={<EmployeeProfiles />} />
@@ -55,7 +59,7 @@ function App() {
         </Route>
 
       {/* --- Employee Protected Group --- */}
-    <Route element={isAuthenticated && role === "Employee" ? <MainLayout /> : <Navigate to="/login" replace />}>
+    <Route element={isAuthenticated && user && role === "Employee" ? <MainLayout /> : <Navigate to="/login" replace />}>
       <Route
         path="/personal-info"
         element={
