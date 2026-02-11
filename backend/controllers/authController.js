@@ -25,13 +25,13 @@ exports.signup = async (req, res, next) => {
       return next(err);
     }
  
+
     if (password !== confirmPassword) {
       const err = new Error('Passwords do not match');
       err.statusCode = 400;
       return next(err);
     }
 
-    // ✅ 验证注册链接 token 是否存在且未使用
     const validToken = await Registration.findOne({
       token: regToken,
       email: email,
