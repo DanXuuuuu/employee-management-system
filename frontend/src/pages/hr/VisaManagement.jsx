@@ -23,7 +23,7 @@ export default function VisaManagement() {
   useEffect(() => {
     dispatch(fetchVisaInProgress());
     dispatch(fetchAllVisa());
-  }, []);
+  }, [dispatch]);
 
   // show success  
   useEffect(() => {
@@ -61,7 +61,8 @@ export default function VisaManagement() {
 
     const feedback = prompt('Please enter rejection reason');
     if (!feedback) return;
-
+    setIsProcessing(true);
+    
     const result = await dispatch(rejectVisaDoc({ userId: employeeId, docType, feedback }));
     
     if (result.type.endsWith('fulfilled')) {
@@ -76,8 +77,11 @@ export default function VisaManagement() {
   };
 
   // send reminder email 
-  const handleSendReminder = (employeeId, email) => {
-    dispatch(sendVisaReminder({ userId: employeeId, email }));
+  const handleSendReminder = async (employeeId, email) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    await dispatch(sendVisaReminder({ userId: employeeId, email }));
+    setIsProcessing(false);
   };
 
   // Helper Functions  

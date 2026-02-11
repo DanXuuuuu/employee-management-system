@@ -79,7 +79,7 @@ async function seed() {
       },
     ],
     applicationStatus: appStatuses[i],
-    hrFeedback: appStatuses[i] === "Rejected" ? "Does not meet requirements" : "",
+    hrFeedback: appStatuses[i].toUpperCase() === "REJECTED" ? "Does not meet requirements" : "",
   }));
 
   const employees = await Employee.insertMany(employeesPayloads);
@@ -89,57 +89,147 @@ async function seed() {
   const DEV_FILE_KEY = (name) => `DEV_SEED/${name}.pdf`;
 
   const docs = [
-    // user1
-    {
-      owner: users[0]._id,
-      type: "OPT Receipt",
-      status: "Approved",
-      feedback: "",
-      fileUrl: DEV_FILE("u1_opt_receipt"),
-      fileKey: DEV_FILE_KEY("u1_opt_receipt"),
-      fileName: "u1_opt_receipt.pdf",
-    },
-    {
-      owner: users[0]._id,
-      type: "OPT EAD",
-      status: "Pending",
-      feedback: "",
-      fileUrl: DEV_FILE("u1_opt_ead"),
-      fileKey: DEV_FILE_KEY("u1_opt_ead"),
-      fileName: "u1_opt_receipt.pdf",
-    },
+  // user1 - OPT Receipt Approved, waiting for OPT EAD upload (In Progress)
+  {
+    owner: users[0]._id,
+    type: "OPT Receipt",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u1_opt_receipt"),
+    fileKey: DEV_FILE_KEY("u1_opt_receipt"),
+    fileName: "u1_opt_receipt.pdf",
+  },
 
-    // user2
-    {
-      owner: users[1]._id,
-      type: "OPT Receipt",
-      status: "Approved",
-      feedback: "",
-      fileUrl: DEV_FILE("u2_opt_receipt"),
-      fileKey: DEV_FILE_KEY("u2_opt_receipt"),
-      fileName: "u2_opt_receipt.pdf",
-    },
-    {
-      owner: users[1]._id,
-      type: "OPT EAD",
-      status: "Rejected",
-      feedback: "blurry", 
-      fileUrl: DEV_FILE("u2_opt_ead"),
-      fileKey: DEV_FILE_KEY("u2_opt_ead"),
-      fileName: "u2_opt_receipt.pdf",
-    },
+  // user2 - OPT EAD pending review (In Progress)
+  {
+    owner: users[1]._id,
+    type: "OPT Receipt",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u2_opt_receipt"),
+    fileKey: DEV_FILE_KEY("u2_opt_receipt"),
+    fileName: "u2_opt_receipt.pdf",
+  },
+  {
+    owner: users[1]._id,
+    type: "OPT EAD",
+    status: "Pending",
+    feedback: "",
+    fileUrl: DEV_FILE("u2_opt_ead"),
+    fileKey: DEV_FILE_KEY("u2_opt_ead"),
+    fileName: "u2_opt_ead.pdf",
+  },
 
-    // user4
-    {
-      owner: users[3]._id,
-      type: "OPT Receipt",
-      status: "Pending",
-      feedback: "",
-      fileUrl: DEV_FILE("u4_opt_receipt"),
-      fileKey: DEV_FILE_KEY("u4_opt_receipt"),
-      fileName: "u4_opt_receipt.pdf",
-    },
-  ];
+  // user3 - I-983 rejected, need re-upload (In Progress)
+  {
+    owner: users[2]._id,
+    type: "OPT Receipt",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u3_opt_receipt"),
+    fileKey: DEV_FILE_KEY("u3_opt_receipt"),
+    fileName: "u3_opt_receipt.pdf",
+  },
+  {
+    owner: users[2]._id,
+    type: "OPT EAD",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u3_opt_ead"),
+    fileKey: DEV_FILE_KEY("u3_opt_ead"),
+    fileName: "u3_opt_ead.pdf",
+  },
+  {
+    owner: users[2]._id,
+    type: "I-983",
+    status: "Rejected",
+    feedback: "Missing signature",
+    fileUrl: DEV_FILE("u3_i983"),
+    fileKey: DEV_FILE_KEY("u3_i983"),
+    fileName: "u3_i983.pdf",
+  },
+
+  // user4 - Waiting for OPT Receipt upload (In Progress)
+  // No documents yet
+
+  // user5 - ALL APPROVED - Complete! (NOT In Progress, but in All Employees)
+  {
+    owner: users[4]._id,
+    type: "OPT Receipt",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u5_opt_receipt"),
+    fileKey: DEV_FILE_KEY("u5_opt_receipt"),
+    fileName: "u5_opt_receipt.pdf",
+  },
+  {
+    owner: users[4]._id,
+    type: "OPT EAD",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u5_opt_ead"),
+    fileKey: DEV_FILE_KEY("u5_opt_ead"),
+    fileName: "u5_opt_ead.pdf",
+  },
+  {
+    owner: users[4]._id,
+    type: "I-983",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u5_i983"),
+    fileKey: DEV_FILE_KEY("u5_i983"),
+    fileName: "u5_i983.pdf",
+  },
+  {
+    owner: users[4]._id,
+    type: "I-20",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u5_i20"),
+    fileKey: DEV_FILE_KEY("u5_i20"),
+    fileName: "u5_i20.pdf",
+  },
+
+  // user6 - I-20 pending (In Progress)
+  {
+    owner: users[5]._id,
+    type: "OPT Receipt",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u6_opt_receipt"),
+    fileKey: DEV_FILE_KEY("u6_opt_receipt"),
+    fileName: "u6_opt_receipt.pdf",
+  },
+  {
+    owner: users[5]._id,
+    type: "OPT EAD",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u6_opt_ead"),
+    fileKey: DEV_FILE_KEY("u6_opt_ead"),
+    fileName: "u6_opt_ead.pdf",
+  },
+  {
+    owner: users[5]._id,
+    type: "I-983",
+    status: "Approved",
+    feedback: "",
+    fileUrl: DEV_FILE("u6_i983"),
+    fileKey: DEV_FILE_KEY("u6_i983"),
+    fileName: "u6_i983.pdf",
+  },
+  {
+    owner: users[5]._id,
+    type: "I-20",
+    status: "Pending",
+    feedback: "",
+    fileUrl: DEV_FILE("u6_i20"),
+    fileKey: DEV_FILE_KEY("u6_i20"),
+    fileName: "u6_i20.pdf",
+  },
+
+  // user7 & user8 - Just started, no docs yet (In Progress)
+];
 
   // Only insert if actually have Document model
   if (Document) { 
@@ -149,7 +239,8 @@ async function seed() {
     for (const doc of createdDocs) {
       await Employee.findOneAndUpdate(
         { user: doc.owner },
-        { $addToSet: { documents: doc._id } }
+        { $addToSet: { documents: doc._id } },
+         { returnDocument: 'after' }
       );
     }
   }
