@@ -79,7 +79,7 @@ exports.uploadDocument = async (req, res, next) => {
     await Employee.findOneAndUpdate(
       { user: userId },
       { $addToSet: { documents: doc._id } },
-      { upsert: true } // 如果 Employee 记录尚未创建则自动创建
+      { upsert: true, returnDocument: 'after' }// 如果 Employee 记录尚未创建则自动创建
     );
 
     return res.status(201).json({
@@ -111,13 +111,13 @@ exports.reuploadDocument = async (req, res, next) => {
       return res.status(404).json({ ok: false, message: "Document not found." });
     }
 
-    const currentStatus = String(doc.status || "").trim().toUpperCase();
-    if (currentStatus !== "REJECTED") {
-      return res.status(409).json({
-        ok: false,
-        message: "Only rejected documents can be re-uploaded."
-      });
-    }
+  const currentStatus = String(doc.status || "").trim();
+  if (currentStatus !== "Rejected") {
+    return res.status(409).json({
+    ok: false,
+    message: "Only rejected documents can be re-uploaded."
+  });
+}
 
 
     //  更新数据库记录并重置状态

@@ -20,6 +20,8 @@ export default function EmployeeProfiles() {
   const [employeeDocuments, setEmployeeDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false); 
 
+//   avoid map bug
+    const list = Array.isArray(employees) ? employees : []; 
     // preview Modal state 
    const [previewModal, setPreviewModal] = useState({
     isOpen: false,
@@ -32,7 +34,7 @@ export default function EmployeeProfiles() {
   useEffect(() => {
     // dispatch thunk  will trigger async operate
     dispatch(fetchEmployees());
-  }, []);
+  }, [dispatch]);
 
   // when selected employee, fetch this person doc
   useEffect(() => {
@@ -172,7 +174,7 @@ export default function EmployeeProfiles() {
       {/* employee list */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">
-          All Employees ({employees.length})
+          All Employees ({list.length})
         </h2>
 
         {/* loading state */}
@@ -199,7 +201,7 @@ export default function EmployeeProfiles() {
                   </td>
                 </tr>
               ) : (
-                employees.map((emp) => (
+                list.map((emp) => (
                   <tr key={emp._id} className="border-t">
                     <td className="px-4 py-2">
                       {emp.lastName}, {emp.firstName}
@@ -208,15 +210,19 @@ export default function EmployeeProfiles() {
                     <td className="px-4 py-2">{emp.email}</td>
                     <td className="px-4 py-2">{emp.phoneNumber}</td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        emp.applicationStatus === 'Approved'
-                          ? 'bg-green-100 text-green-700'
-                          : emp.applicationStatus === 'Pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {emp.applicationStatus}
-                      </span>
+                    <span
+                        className={`px-2 py-1 rounded text-xs ${
+                        String(emp.applicationStatus || "").toUpperCase() === "APPROVED"
+                            ? "bg-green-100 text-green-700"
+                            : String(emp.applicationStatus || "").toUpperCase() === "PENDING"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : String(emp.applicationStatus || "").toUpperCase() === "REJECTED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                    >
+                        {emp.applicationStatus ? emp.applicationStatus.charAt(0).toUpperCase() + emp.applicationStatus.slice(1).toLowerCase() : 'NOT_STARTED'}
+                    </span>
                     </td>
                     <td className="px-4 py-2">
                       <button
