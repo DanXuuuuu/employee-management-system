@@ -20,6 +20,8 @@ export default function EmployeeProfiles() {
   const [employeeDocuments, setEmployeeDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false); 
 
+//   avoid map bug
+    const list = Array.isArray(employees) ? employees : []; 
     // preview Modal state 
    const [previewModal, setPreviewModal] = useState({
     isOpen: false,
@@ -32,7 +34,7 @@ export default function EmployeeProfiles() {
   useEffect(() => {
     // dispatch thunk  will trigger async operate
     dispatch(fetchEmployees());
-  }, []);
+  }, [dispatch]);
 
   // when selected employee, fetch this person doc
   useEffect(() => {
@@ -199,7 +201,7 @@ export default function EmployeeProfiles() {
                   </td>
                 </tr>
               ) : (
-                employees.map((emp) => (
+                list.map((emp) => (
                   <tr key={emp._id} className="border-t">
                     <td className="px-4 py-2">
                       {emp.lastName}, {emp.firstName}

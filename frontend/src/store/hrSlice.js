@@ -77,7 +77,7 @@ export const fetchEmployees = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get("/hr/employees");
-      return res.data;
+      return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch employees");
     }
