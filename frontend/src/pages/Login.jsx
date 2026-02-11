@@ -1,15 +1,16 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect, navigate } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector} from "react-redux";
 
 import AuthPage from "../components/auth/AuthPage";
 import AuthCard from "../components/auth/AuthCard";
 import TextField from "../components/ui/TextField";
 import Button from "../components/ui/Button";
-import { login, clearSignInError, logout } from "../store/authSlice";
+import { login, clearSignInError } from "../store/authSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
- 
+  const navigate = useNavigate(); 
   const dispatch = useDispatch();
   const { isAuthenticated, user, signIn } = useSelector((s) => s.auth);
 
