@@ -63,7 +63,16 @@ export default function VisaStatusManagementPage() {
   const isOptFlow = visaType === "F1(CPT/OPT)";
 
 
-  const getDocByType = (type) => (documents || []).find((d) => d.type === type);
+  const getDocByType = (type) => {
+    const list = (documents || []).filter((d) => d.type === type);
+    if (list.length === 0) return null;
+  
+    return list.sort((a, b) => {
+      const at = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const bt = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return bt - at; // 新的在前
+    })[0];
+  }
 
   const optReceiptDoc = getDocByType(DOC_TYPES.OPT_RECEIPT);
   const optEadDoc = getDocByType(DOC_TYPES.OPT_EAD);
@@ -76,16 +85,23 @@ export default function VisaStatusManagementPage() {
   const i20Status = normalizeStatus(i20Doc?.status);
 
   // 只看 Approved 才能解锁下一步
-  const canUploadOptReceipt = true; // F1 onboarding 已提交了 OPT Receipt，
   const canUploadOptEad = optReceiptStatus === "Approved";
   const canUploadI983 = optEadStatus === "Approved";
   const canUploadI20 = i983Status === "Approved";
+
+    // 规则：没上传过 -> 可以上传；
+    //Rejected -> 可以 Replace；    
+    //其他 -> 不允许 Replace
+    const canPickOptReceipt = !optReceiptDoc || optReceiptStatus === "Rejected";
+    const canPickOptEad = canUploadOptEad && (!optEadDoc || optEadStatus === "Rejected");
+    const canPickI983 = canUploadI983 && (!i983Doc || i983Status === "Rejected");
+    const canPickI20 = canUploadI20 && (!i20Doc || i20Status === "Rejected");
 
   // ---- 每一步要显示的 message ----
   const receiptMessage = useMemo(() => {
     if (optReceiptStatus === "Pending") return "Waiting for HR to approve your OPT Receipt.";
     if (optReceiptStatus === "Approved") return "Please upload a copy of your OPT EAD.";
-    if (optReceiptStatus === "Rejected") return optReceiptDoc?.feedback || "Your OPT Receipt was rejected. Please check HR feedback.";
+    if (optReceiptStatus === "Rejected") return "Your OPT Receipt was rejected. Please check HR feedback.";
     return "Please upload your OPT Receipt (submitted in onboarding application).";
   }, [optReceiptStatus, optReceiptDoc?.feedback]);
 
@@ -226,7 +242,6 @@ export default function VisaStatusManagementPage() {
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="text-xl font-bold text-slate-900">Visa Status Management</div>
-            <Badge variant="default">OPT Flow</Badge>
             <Badge variant="default">{visaType}</Badge>
             {uploading && <Badge variant="warning">Uploading...</Badge>}
           </div>
@@ -275,7 +290,7 @@ export default function VisaStatusManagementPage() {
                     label="OPT Receipt"
                     required
                     fileName={optReceiptDoc?.fileName || ""}
-                    disabled={!canUploadOptReceipt|| uploading}
+                    disabled={!canPickOptReceipt|| uploading}
                     status={optReceiptDoc?.status}
                     feedback={optReceiptDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_RECEIPT)}
@@ -300,7 +315,7 @@ export default function VisaStatusManagementPage() {
                     label="OPT EAD"
                     required
                     fileName={optEadDoc?.fileName || ""}
-                    disabled={!canUploadOptEad || uploading}
+                    disabled={!canPickOptEad|| uploading}
                     status={optEadDoc?.status}
                     feedback={optEadDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_EAD)}
@@ -339,12 +354,12 @@ export default function VisaStatusManagementPage() {
                     required
                     hint="Upload your filled I-983 after OPT EAD is approved."
                     fileName={i983Doc?.fileName || ""}
-                    disabled={!canUploadI983}
+                    disabled={!canPickI983 || uploading}
                     status={i983Doc?.status}
                     feedback={i983Doc?.feedback}
                     onPick={handlePick(DOC_TYPES.I983)}
                     onPreview={i983Doc?.fileUrl ? openLink(i983Doc.fileUrl) : undefined}
-                    onDownload={i983Doc?.fileUrl ? openLink(i983Doc.fileUrl) : undefined}
+                    onDownload={i983Doc?.fileUrl ? downloadFile(i983Doc.fileUrl, i983Doc.fileName || "document") : undefined}
                   />
                 </div>
 
@@ -365,12 +380,12 @@ export default function VisaStatusManagementPage() {
                     required
                     hint="Upload the updated I-20 issued by your school."
                     fileName={i20Doc?.fileName || ""}
-                    disabled={!canUploadI20 || uploading}
+                    disabled={!canPickI20 || uploading}
                     status={i20Doc?.status}
                     feedback={i20Doc?.feedback}
                     onPick={handlePick(DOC_TYPES.I20)}
                     onPreview={i20Doc?.fileUrl ? openLink(i20Doc.fileUrl) : undefined}
-                    onDownload={i20Doc?.fileUrl ? openLink(i20Doc.fileUrl) : undefined}
+                    onDownload={i20Doc?.fileUrl ? downloadFile(i20Doc.fileUrl, i20Doc.fileName || "document") : undefined}
                   />
                 </div>
 

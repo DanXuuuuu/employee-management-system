@@ -21,6 +21,7 @@ export const fetchMyDocuments = createAsyncThunk(
 
       const res = await fetch(`${BASE_URL}/api/documents`, {
         headers: {
+          method: "GET",
           Authorization: `Bearer ${token}`,
         },
       });
@@ -99,12 +100,6 @@ export const reuploadDocument = createAsyncThunk(
   }
 );
 
-const upsertById = (items, doc) => {
-  const idx = items.findIndex((x) => x._id === doc._id);
-  if (idx >= 0) items[idx] = doc;
-  else items.unshift(doc); // 新的放最前
-};
-
 const documentsSlice = createSlice({
   name: "documents",
   initialState: {
@@ -141,7 +136,7 @@ const documentsSlice = createSlice({
       })
       .addCase(uploadDocument.fulfilled, (state, action) => {
         state.uploading = false;
-        if (action.payload) upsertById(state.items, action.payload);
+        state.items.unshift(action.payload);
       })
       .addCase(uploadDocument.rejected, (state, action) => {
         state.uploading = false;
@@ -155,7 +150,8 @@ const documentsSlice = createSlice({
       })
       .addCase(reuploadDocument.fulfilled, (state, action) => {
         state.uploading = false;
-        if (action.payload) upsertById(state.items, action.payload);
+        const updated = action.payload;
+        state.items = state.items.map((d) => (d._id === updated._id ? updated : d));
       })
       .addCase(reuploadDocument.rejected, (state, action) => {
         state.uploading = false;
