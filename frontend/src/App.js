@@ -1,7 +1,8 @@
 import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-import MainLayout from '../src/components/layout/MainLayout';
+import MainLayout from "./components/layout/MainLayout";
+
 import Register from "./pages/Register";
 import OnboardingPage from "./pages/OnboardingPage";
 import PersonalInfo from "./pages/PersonalInfo";
@@ -9,15 +10,11 @@ import VisaStatusManagementPage from "./pages/VisaStatusManagementPage"
 import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
+import DocumentManagement from "./pages/DocumentManagement";
 import HrHome from './pages/hr/HrHome';
-<<<<<<< HEAD
-import { useSelector } from "react-redux";
-import DocumentManagement from './pages/DocumentManagement';
-=======
 import { restoreSession } from "./store/authSlice";
 import { useSelector,useDispatch } from "react-redux";
 import { useEffect } from "react";
->>>>>>> origin/feature/employee
 
 function App() {
   const dispatch = useDispatch();
@@ -57,22 +54,31 @@ function App() {
           <Route path='/hr/visa' element={<VisaManagement />} />
         </Route>
 
-        {/* --- Employee Protected Group --- */}
-        <Route element={isAuthenticated && role === "Employee" ? <MainLayout /> : <Navigate to="/login" replace />}>
-          <Route path="/personal-info" element={
-            onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
-          } />
-<<<<<<< HEAD
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/employee/visa" element={<div>Employee Visa Page</div>} />
-          <Route path="/documents" element={<DocumentManagement />} />
-=======
-          <Route path="/onboarding" element={
-          onboardingStatus === "Approved" ?  <Navigate to="/personal-info" replace /> :<OnboardingPage />
-          } />
-          <Route path="/visa-status" element={<VisaStatusManagementPage/>} />
->>>>>>> origin/feature/employee
-        </Route>
+      {/* --- Employee Protected Group --- */}
+    <Route element={isAuthenticated && role === "Employee" ? <MainLayout /> : <Navigate to="/login" replace />}>
+      <Route
+        path="/personal-info"
+        element={
+          onboardingStatus === "Approved"
+            ? <PersonalInfo />
+            : <Navigate to="/onboarding" replace />
+        }
+      />
+
+      <Route
+        path="/onboarding"
+        element={
+          onboardingStatus === "Approved"
+            ? <Navigate to="/personal-info" replace />
+            : <OnboardingPage />
+        }
+      />
+
+      <Route path="/employee/visa" element={<Navigate to="/visa-status" replace />} />
+      <Route path="/visa-status" element={<VisaStatusManagementPage />} />
+
+      <Route path="/documents" element={<DocumentManagement />} />
+    </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
