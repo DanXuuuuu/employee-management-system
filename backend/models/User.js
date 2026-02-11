@@ -28,7 +28,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6,
-        // password format validate
         validate:{
             validator: function(password){
             //   check if the password already hashed
@@ -63,8 +62,6 @@ userSchema.pre('save', async function () {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
-// mongoose will throw if error 
-// and dont use next() here, be safe. 
 
 
 // this is verify for check the content of login

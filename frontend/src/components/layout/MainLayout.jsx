@@ -27,7 +27,7 @@ export default function MainLayout() {
   const employeeNavLinks = [
     { path: "/onboarding", label: "Onboarding" },
     { path: "/personal-info", label: "Personal Info" },
-    { path: "/employee/visa", label: "Visa Status" },
+    { path: "/visa-status", label: "Visa Status" },
   ];
 
   const navLinks =
