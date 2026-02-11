@@ -138,3 +138,32 @@ exports.login = async (req, res, next) => {
         next(error);
     }
 };
+
+// GET /api/auth/me
+exports.me = async (req, res, next) => {
+  try {
+    
+    const user = req.user;
+    
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    let applicationStatus = "Not Started";
+    if (user.role === "Employee") {
+      const employeeProfile = await Employee.findOne({ user: user._id });
+      if (employeeProfile) applicationStatus = employeeProfile.applicationStatus;
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        applicationStatus
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
