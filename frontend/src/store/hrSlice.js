@@ -180,7 +180,7 @@ export const sendVisaReminder = createAsyncThunk(
 const initialState = {
   // Hiring Management
   tokenHistory: [],
-  onboardingApplications: [],
+  onboardingApplications: { pending: [], approved: [], rejected: [] },
   
   // Employee Profiles
   employees: [],
@@ -269,17 +269,10 @@ const hrSlice = createSlice({
       .addCase(approveApplication.pending, (state) => {
         state.loading.hiring = true;
       })
-      .addCase(approveApplication.fulfilled, (state, action) => {
+     .addCase(approveApplication.fulfilled, (state) => {
         state.loading.hiring = false;
-        // update list of application states 
-        const index = state.onboardingApplications.findIndex(
-          app => app._id === action.payload._id
-        );
-        if (index !== -1) {
-          state.onboardingApplications[index] = action.payload;
-        }
         state.successMessage = "Application approved successfully";
-      })
+    })
       .addCase(approveApplication.rejected, (state, action) => {
         state.loading.hiring = false;
         state.error.hiring = action.payload;
@@ -289,16 +282,10 @@ const hrSlice = createSlice({
       .addCase(rejectApplication.pending, (state) => {
         state.loading.hiring = true;
       })
-      .addCase(rejectApplication.fulfilled, (state, action) => {
+    .addCase(rejectApplication.fulfilled, (state) => {
         state.loading.hiring = false;
-        const index = state.onboardingApplications.findIndex(
-          app => app._id === action.payload._id
-        );
-        if (index !== -1) {
-          state.onboardingApplications[index] = action.payload;
-        }
         state.successMessage = "Application rejected";
-      })
+    })
       .addCase(rejectApplication.rejected, (state, action) => {
         state.loading.hiring = false;
         state.error.hiring = action.payload;

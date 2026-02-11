@@ -22,7 +22,7 @@ export default function HiringManagement() {
   useEffect(() => {
     dispatch(fetchTokenHistory());
     dispatch(fetchOnboardingApplications());
-  }, []);
+  }, [dispatch]);
 
   // dealwith success message 
   useEffect(() => {
