@@ -13,7 +13,7 @@ export default function MainLayout() {
     const isConfirmed = window.confirm("Are you sure you want to log out? Any unsaved changes may be lost.");
     if (isConfirmed) {
     dispatch(logout()); 
-    navigate("/login");
+    navigate("/login", { replace: true });
   }
 };
 
@@ -25,9 +25,8 @@ export default function MainLayout() {
   ];
 
   const employeeNavLinks = [
-    { path: "/onboarding", label: "Onboarding" },
-    { path: "/personal-info", label: "Personal Info" },
-    { path: "/employee/visa", label: "Visa Status" },
+    { path: "/personal-info", label: "Personal Information" },
+    { path: "/visa-status", label: "Visa Status Management" },
   ];
 
   const navLinks =
@@ -41,6 +40,8 @@ export default function MainLayout() {
         </h1>
 
         <div className="flex items-center gap-1">
+        {isAuthenticated && (
+          <>
           <nav className="flex items-center gap-1 mr-4 border-r border-gray-200 pr-4">
             {navLinks.map((link) => (
               <Link
@@ -57,13 +58,13 @@ export default function MainLayout() {
             ))}
           </nav>
 
-          {isAuthenticated && (
             <button
               onClick={handleLogout}
               className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
             >
               Logout
             </button>
+            </>
           )}
         </div>
       </header>

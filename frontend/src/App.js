@@ -5,14 +5,22 @@ import MainLayout from '../src/components/layout/MainLayout';
 import Register from "./pages/Register";
 import OnboardingPage from "./pages/OnboardingPage";
 import PersonalInfo from "./pages/PersonalInfo";
+import VisaStatusManagementPage from "./pages/VisaStatusManagementPage"
 import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
+<<<<<<< HEAD
 import { useSelector } from "react-redux";
 import DocumentManagement from './pages/DocumentManagement';
+=======
+import { restoreSession } from "./store/authSlice";
+import { useSelector,useDispatch } from "react-redux";
+import { useEffect } from "react";
+>>>>>>> origin/feature/employee
 
 function App() {
+  const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const role = user?.role;
   const onboardingStatus = user?.applicationStatus;
@@ -24,6 +32,11 @@ function App() {
     }
     return "/login";
   };
+
+  useEffect(() => {
+    // after refresh, verify token and restore user
+    dispatch(restoreSession());
+  }, [dispatch]);
 
   return (
     <BrowserRouter>
@@ -49,12 +62,19 @@ function App() {
           <Route path="/personal-info" element={
             onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
           } />
+<<<<<<< HEAD
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/employee/visa" element={<div>Employee Visa Page</div>} />
           <Route path="/documents" element={<DocumentManagement />} />
+=======
+          <Route path="/onboarding" element={
+          onboardingStatus === "Approved" ?  <Navigate to="/personal-info" replace /> :<OnboardingPage />
+          } />
+          <Route path="/visa-status" element={<VisaStatusManagementPage/>} />
+>>>>>>> origin/feature/employee
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

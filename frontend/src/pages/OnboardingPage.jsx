@@ -284,7 +284,6 @@ export default function OnboardingPage() {
             {active === "personal" && (
               <Card
                 title="Personal Details"
-                right={<Badge variant="default">Redux</Badge>}
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextField
@@ -360,7 +359,6 @@ export default function OnboardingPage() {
             {active === "contact" && (
               <Card
                 title="Address & Contact"
-                right={<Badge variant="default">Redux</Badge>}
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextField
@@ -454,7 +452,7 @@ export default function OnboardingPage() {
 
             {/* ============ Section: Identity ============ */}
             {active === "identity" && (
-              <Card title="Identity" right={<Badge variant="default">Redux</Badge>}>
+              <Card title="Identity" >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextField
                     label="SSN *"
@@ -502,7 +500,6 @@ export default function OnboardingPage() {
             {active === "workAuth" && (
               <Card
                 title="Residency & Work Authorization"
-                right={<Badge variant="default">Redux</Badge>}
               >
                 <div className="space-y-6">
                   {/* citizen / permanent resident */}
@@ -723,7 +720,6 @@ export default function OnboardingPage() {
             {active === "refEmergency" && (
               <Card
                 title="Reference & Emergency"
-                right={<Badge variant="default">Redux</Badge>}
               >
                 <div className="space-y-6">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -1004,7 +1000,6 @@ export default function OnboardingPage() {
             {active === "docs" && (
               <Card
                 title="Documents & Summary"
-                right={<Badge variant="default">Redux</Badge>}
               >
                 <div className="space-y-3">
                   <FileUploadCard

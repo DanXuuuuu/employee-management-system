@@ -111,8 +111,8 @@ exports.reuploadDocument = async (req, res, next) => {
       return res.status(404).json({ ok: false, message: "Document not found." });
     }
 
-    // 状态校验：只有 Rejected 的文档允许重新上传
-    if (doc.status !== "Rejected") {
+    const currentStatus = String(doc.status || "").trim().toUpperCase();
+    if (currentStatus !== "REJECTED") {
       return res.status(409).json({
         ok: false,
         message: "Only rejected documents can be re-uploaded."
@@ -124,7 +124,7 @@ exports.reuploadDocument = async (req, res, next) => {
     doc.fileUrl = `/uploads/${req.file.filename}`;
     doc.fileKey = req.file.filename;
     doc.fileName = req.file.originalname;
-    doc.status = "Pending"; // 重置为 Pending 等待重新审核
+    doc.status = "Pending";// 重置为 Pending 等待重新审核
     doc.feedback = ""; // 清空之前的拒绝反馈
 
     await doc.save();
