@@ -60,12 +60,12 @@ export const rejectApplication = createAsyncThunk(
 // generate token
 export const generateToken = createAsyncThunk(
   "hr/generateToken",
-  async ({ email }, { rejectWithValue }) => {
+  async ({ name, email }, { rejectWithValue }) => {
     try {
-      const res = await api.post("/registration/generate", { email });
-      return res.data.data; // return token 
+      const res = await api.post("/registration/generate", { name, email });
+      return res.data; //return token 
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to generate token");
+      return rejectWithValue(err.response?.data?.message || err.response?.data?.error || "Failed to generate token");
     }
   }
 );
@@ -77,7 +77,7 @@ export const fetchEmployees = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get("/hr/employees");
-      return res.data.data;
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch employees");
     }
@@ -311,8 +311,7 @@ const hrSlice = createSlice({
       .addCase(generateToken.fulfilled, (state, action) => {
         state.loading.hiring = false;
         // add new token to list 
-        state.tokenHistory.unshift(action.payload);
-        state.successMessage = "Token generated successfully";
+        state.successMessage = action.payload?.message || "Invitation sent";
       })
       .addCase(generateToken.rejected, (state, action) => {
         state.loading.hiring = false;

@@ -50,7 +50,7 @@ export default function HiringManagement() {
     setMessage('');
 
     // dispatch return Promise and check result 
-    const result = await dispatch(generateToken({ email }));
+    const result = await dispatch(generateToken({ name, email }));
     
     // success - clean form
     if (result.type.endsWith('fulfilled')) {
@@ -186,32 +186,24 @@ export default function HiringManagement() {
               </tr>
             </thead>
             <tbody>
-              {tokenHistory.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="px-4 py-3 text-center text-gray-400">
-                    No records found
-                  </td>
-                </tr>
-              ) : (
-                tokenHistory.map((token) => (
-                  <tr key={token._id} className="border-t">
-                    <td className="px-4 py-2">{token.email}</td>
-                    <td className="px-4 py-2">{token.name}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        token.status === 'used'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {token.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      {new Date(token.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
+        {(tokenHistory || []).map((t, i) => (
+        <tr key={t?._id || i} className="border-t">
+            <td className="px-4 py-2">{t?.email || "N/A"}</td>
+            <td className="px-4 py-2">{t?.name || "N/A"}</td>
+            <td className="px-4 py-2">
+            <span className={`px-2 py-1 rounded text-xs ${
+                t?.status === 'used'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-yellow-100 text-yellow-700'
+            }`}>
+                {t?.status || "unknown"}
+            </span>
+            </td>
+            <td className="px-4 py-2">
+            {t?.createdAt ? new Date(t.createdAt).toLocaleDateString() : "N/A"}
+            </td>
+        </tr>
+        ))}
             </tbody>
           </table>
         )}
