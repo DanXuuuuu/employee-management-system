@@ -9,9 +9,12 @@ import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
-import { useSelector } from "react-redux";
+import { restoreSession } from "./store/slices/authSlice";
+import { useSelector,useDispatch } from "react-redux";
+import { useEffect } from "react";
 
 function App() {
+  const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const role = user?.role;
   const onboardingStatus = user?.applicationStatus;
@@ -23,6 +26,11 @@ function App() {
     }
     return "/login";
   };
+
+  useEffect(() => {
+    // after refresh, verify token and restore user
+    dispatch(restoreSession());
+  }, [dispatch]);
 
   return (
     <BrowserRouter>
