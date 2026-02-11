@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 .DS_Store
 **/.DS_Store
+backend/uploads/*
+backend/uploads/*
+backend/uploads/.gitkeep
