@@ -111,6 +111,7 @@ export const restoreSession = createAsyncThunk(
     token: savedAuth.token || "",
     user: savedAuth.user,
     isAuthenticated: savedAuth.isAuthenticated,
+    hydrated: false, 
   
     signIn: {
       loading: false,
@@ -173,6 +174,7 @@ const authSlice = createSlice({
             state.token = action.payload.token;
             state.user = action.payload.user;
             state.isAuthenticated = true;
+            state.hydrated = true;
     
             localStorage.setItem(TOKEN_KEY, action.payload.token);
             localStorage.setItem(USER_KEY, JSON.stringify(action.payload.user || {}));
@@ -215,6 +217,7 @@ const authSlice = createSlice({
           })
           .addCase(restoreSession.fulfilled, (state, action) => {
             state.restore.loading = false;
+            state.hydrated = true;
             state.restore.error = "";
     
             state.token = action.payload.token;
@@ -226,6 +229,10 @@ const authSlice = createSlice({
           })
           .addCase(restoreSession.rejected, (state, action) => {
             state.restore.loading = false;
+            state.hydrated = true;
+            state.user = null;
+            state.token = "";
+            state.isAuthenticated = false;
             state.restore.error = action.payload || "Restore session failed";
           });
              

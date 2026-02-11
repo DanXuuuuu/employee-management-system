@@ -5,9 +5,13 @@ const User = require('../models/User');
 exports.protect = async (req, res, next) => {
     try {
         let token;
-
+        // method1: get token from header
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
+        }
+        // method2: get token from url query param (use for preview )
+        else if (req.query.token) {
+            token = req.query.token;
         }
 
         if (!token) {

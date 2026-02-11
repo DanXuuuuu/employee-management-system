@@ -10,20 +10,20 @@ import HiringManagement from './pages/hr/HiringManagement';
 import EmployeeProfiles from "./pages/hr/EmployeeProfiles";
 import VisaManagement from './pages/hr/VisaManagement';
 import HrHome from './pages/hr/HrHome';
-import { restoreSession } from "./store/authSlice";
 import { useSelector,useDispatch } from "react-redux";
 import { useEffect } from "react";
+import { restoreSession } from "./store/authSlice";
 
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const role = user?.role;
-  const onboardingStatus = user?.applicationStatus;
+  const onboardingStatus = useSelector(s => s.onboarding.applicationStatus); 
   
   const getPostLoginPath = () => {
     if (role === "HR") return "/hr/home";
     if (role === "Employee") {
-      return onboardingStatus === "Approved" ? "/personal-info" : "/onboarding";
+      return onboardingStatus === "APPROVED" ? "/personal-info" : "/onboarding";
     }
     return "/login";
   };
@@ -55,10 +55,10 @@ function App() {
         {/* --- Employee Protected Group --- */}
         <Route element={isAuthenticated && role === "Employee" ? <MainLayout /> : <Navigate to="/login" replace />}>
           <Route path="/personal-info" element={
-            onboardingStatus === "Approved" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
+            onboardingStatus === "APPROVED" ? <PersonalInfo /> : <Navigate to="/onboarding" replace />
           } />
           <Route path="/onboarding" element={
-          onboardingStatus === "Approved" ?  <Navigate to="/personal-info" replace /> :<OnboardingPage />
+          onboardingStatus === "APPROVED" ?  <Navigate to="/personal-info" replace /> :<OnboardingPage />
           } />
           <Route path="/visa-status" element={<VisaStatusManagementPage/>} />
         </Route>

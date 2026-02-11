@@ -8,7 +8,6 @@ import Card from "../components/ui/Card";
 import SectionNavItem from "../components/ui/SectionNavItem";
 import Banner from "../components/ui/Banner";
 import Badge from "../components/ui/Badge";
-import FileUploadCard from "../components/ui/FileUploadCard";
 
 import {
   fetchPersonalInfo,
@@ -132,22 +131,29 @@ export default function PersonalInfo() {
   };
 
   // 打开文件链接 预览/下载
-  const openLink = (url) => () => {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handlePreview = (doc) => () => {
+    if (!doc?.fileUrl) return;
+
+    const fullUrl = `http://localhost:8080${doc.fileUrl}`; 
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
-  const downloadFile = (url, fileName = "download") => () => {
-    if (!url) return;
+  const handleDownload = (doc) => () => {
+  if (!doc?.fileUrl) return;
+
+  const fullUrl = `http://localhost:8080${doc.fileUrl}`;
+ 
+  const link = document.createElement('a');
+  link.href = fullUrl;
+
+  link.setAttribute('download', `${doc.type.replace(/\s+/g, '_')}_${doc.fileName}`);
   
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName; 
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-  
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+};
+
 
 
   const startEdit = (key) => {
@@ -664,11 +670,6 @@ export default function PersonalInfo() {
                   />
                 </div>
 
-                {!editing.emergency && (
-                  <div className="mt-3 text-xs text-slate-500">
-                    Tip: Emergency contact fields are required in the Employee schema.
-                  </div>
-                )}
               </Card>
             )}
 
@@ -690,62 +691,6 @@ export default function PersonalInfo() {
                       {String(docsError)}
                     </div>
                   )}
-
-                  {/* Driver License */}
-                  <FileUploadCard
-                    label="Driver License"
-                    required
-                    hint={
-                      !driverLicenseDoc
-                        ? "Upload your driver license."
-                        : driverStatus === "Rejected"
-                        ? "Rejected — please re-upload a corrected file."
-                        : "Uploaded — waiting for HR review (or approved)."
-                    }
-                    fileName={driverLicenseDoc?.fileName || ""}
-                    disabled={disableDriverUpload}
-                    status={driverLicenseDoc?.status}
-                    feedback={driverLicenseDoc?.feedback}
-                    onPick={handlePickDoc(DOC_TYPES.DRIVER_LICENSE)}
-                    onPreview={
-                      driverLicenseDoc?.fileUrl
-                        ? openLink(driverLicenseDoc.fileUrl)
-                        : undefined
-                    }
-                    onDownload={
-                      driverLicenseDoc?.fileUrl
-                        ? openLink(driverLicenseDoc.fileUrl)
-                        : undefined
-                    }
-                  />
-
-                  {/* Work Authorization */}
-                  <FileUploadCard
-                    label="Work Authorization"
-                    required
-                    hint={
-                      !workAuthDoc
-                        ? "Upload your work authorization document."
-                        : workAuthStatus === "Rejected"
-                        ? "Rejected — please re-upload a corrected file."
-                        : "Uploaded — waiting for HR review (or approved)."
-                    }
-                    fileName={workAuthDoc?.fileName || ""}
-                    disabled={disableWorkAuthUpload}
-                    status={workAuthDoc?.status}
-                    feedback={workAuthDoc?.feedback}
-                    onPick={handlePickDoc(DOC_TYPES.WORK_AUTH)}
-                    onPreview={
-                      workAuthDoc?.fileUrl
-                        ? openLink(workAuthDoc.fileUrl)
-                        : undefined
-                    }
-                    onDownload={
-                      workAuthDoc?.fileUrl
-                        ? openLink(workAuthDoc.fileUrl)
-                        : undefined
-                    }
-                  />
 
                   {/* All uploaded file */}
                   {docs.length > 0 && (
@@ -778,7 +723,7 @@ export default function PersonalInfo() {
                               <div className="w-32">
                                 <Button
                                   disabled={!d.fileUrl}
-                                  onClick={d.fileUrl ? openLink(d.fileUrl) : undefined}
+                                  onClick={handlePreview(d)}
                                 >
                                   Preview
                                 </Button>
@@ -786,7 +731,7 @@ export default function PersonalInfo() {
                               <div className="w-32">
                                 <Button
                                   disabled={!d.fileUrl}
-                                  onClick={d.fileUrl ? downloadFile(d.fileUrl, d.fileName || "document") : undefined}
+                                  onClick={handleDownload(d)}
                                 >
                                   Download
                                 </Button>

@@ -341,16 +341,6 @@ export default function OnboardingPage() {
                       readOnly
                     />
                   </div>
-
-                  {/* Profile picture: backend documents enum 没这个 type，所以暂时纯 UI */}
-                  <div className="md:col-span-2">
-                    <FileUploadCard
-                      label="Profile Picture"
-                      hint="UI only (not wired to API)."
-                      fileName={form.profilePicture || ""}
-                      disabled={isReadOnly}
-                    />
-                  </div>
                 </div>
               </Card>
             )}
@@ -832,10 +822,6 @@ export default function OnboardingPage() {
                         }
                         readOnly={isReadOnly}
                       />
-                    </div>
-
-                    <div className="mt-3 text-xs text-slate-500">
-                      Reference is optional unless your backend requires it later.
                     </div>
                   </div>
 

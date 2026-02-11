@@ -9,6 +9,7 @@ import FileUploadCard from "../components/ui/FileUploadCard";
 import { fetchPersonalInfo } from "../store/personalInfoSlice";
 import { fetchMyDocuments, uploadDocument, reuploadDocument } from "../store/documentsSlice";
 
+
 const DOC_TYPES = {
   OPT_RECEIPT: "OPT Receipt",
   OPT_EAD: "OPT EAD",
@@ -129,22 +130,33 @@ export default function VisaStatusManagementPage() {
     return "Please upload your new I-20 (after your school issues it).";
   }, [canUploadI20, i20Status, i20Doc?.feedback]);
 
+  const handlePreview = (doc) => () => {
+    if (!doc?.fileUrl) return;
 
-  const openLink = (url) => () => {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
+    const fullUrl = `http://localhost:8080${doc.fileUrl}`; 
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
-  const downloadFile = (url, fileName = "download") => () => {
-    if (!url) return;
+  const handleDownload = (doc) => () => {
+  if (!doc?.fileUrl) return;
+
+  const fullUrl = `http://localhost:8080${doc.fileUrl}`;
+ 
+  const link = document.createElement('a');
+  link.href = fullUrl;
+
+  link.setAttribute('download', `${doc.type.replace(/\s+/g, '_')}_${doc.fileName}`);
   
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName; // hint browser to download
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  };
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+};
+
+const openLink = (url) => () => {
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer"); 
+};
 
   const handlePick = (type) => async (file) => {
     if (!file) return;
@@ -294,8 +306,8 @@ export default function VisaStatusManagementPage() {
                     status={optReceiptDoc?.status}
                     feedback={optReceiptDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_RECEIPT)}
-                    onPreview={optReceiptDoc?.fileUrl ? openLink(optReceiptDoc.fileUrl) : undefined}
-                    onDownload={optReceiptDoc?.fileUrl ? downloadFile(optReceiptDoc.fileUrl, optReceiptDoc.fileName || "document") : undefined}
+                    onPreview={handlePreview(optReceiptDoc)}
+                    onDownload={handleDownload(optReceiptDoc)}
                   />
                 </div>
 
@@ -319,8 +331,8 @@ export default function VisaStatusManagementPage() {
                     status={optEadDoc?.status}
                     feedback={optEadDoc?.feedback}
                     onPick={handlePick(DOC_TYPES.OPT_EAD)}
-                    onPreview={optEadDoc?.fileUrl ? openLink(optEadDoc.fileUrl) : undefined}
-                    onDownload={optEadDoc?.fileUrl ?  downloadFile(optEadDoc.fileUrl, optEadDoc.fileName || "document") : undefined}
+                    onPreview={handlePreview(optEadDoc)}
+                    onDownload={handleDownload(optEadDoc)}
                   />
                 </div>
 
@@ -358,8 +370,8 @@ export default function VisaStatusManagementPage() {
                     status={i983Doc?.status}
                     feedback={i983Doc?.feedback}
                     onPick={handlePick(DOC_TYPES.I983)}
-                    onPreview={i983Doc?.fileUrl ? openLink(i983Doc.fileUrl) : undefined}
-                    onDownload={i983Doc?.fileUrl ? downloadFile(i983Doc.fileUrl, i983Doc.fileName || "document") : undefined}
+                    onPreview={handlePreview(i983Doc)}
+                    onDownload={handleDownload(i983Doc)}
                   />
                 </div>
 
@@ -384,8 +396,8 @@ export default function VisaStatusManagementPage() {
                     status={i20Doc?.status}
                     feedback={i20Doc?.feedback}
                     onPick={handlePick(DOC_TYPES.I20)}
-                    onPreview={i20Doc?.fileUrl ? openLink(i20Doc.fileUrl) : undefined}
-                    onDownload={i20Doc?.fileUrl ? downloadFile(i20Doc.fileUrl, i20Doc.fileName || "document") : undefined}
+                    onPreview={handlePreview(i20Doc)}
+                    onDownload={handleDownload(i20Doc)}
                   />
                 </div>
 

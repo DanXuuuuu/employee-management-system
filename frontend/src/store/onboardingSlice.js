@@ -36,12 +36,12 @@ export const fetchOnboarding = createAsyncThunk(
           },
         });
   
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.ok === false) {
-          return rejectWithValue(pickErrorMessage(json, "Failed to fetch onboarding"));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.ok === false) {
+          return rejectWithValue(data?.message || "Fetch onboarding failed");
         }
   
-        return json.data; // {status, hrFeedback, employee, documents}
+        return data?.data; // {status, hrFeedback, employee, documents}
       } catch (err) {
         return rejectWithValue(err?.message || "Network error");
       }

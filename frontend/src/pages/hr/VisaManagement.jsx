@@ -16,13 +16,14 @@ export default function VisaManagement() {
 
   const [activeTab, setActiveTab] = useState('in-progress');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   //  Effects  
   // fetch two lists of data  when page loading 
   useEffect(() => {
     dispatch(fetchVisaInProgress());
     dispatch(fetchAllVisa());
-  }, [dispatch]);
+  }, []);
 
   // show success  
   useEffect(() => {
@@ -36,26 +37,41 @@ export default function VisaManagement() {
   //  Event Handlers  
   // approve doc  
   const handleApproveDoc = async (employeeId, docType) => {
+     if (isProcessing) return; //avoid click again 
+     setIsProcessing(true);
     // dispatch return Promise & could await
     const result = await dispatch(approveVisaDoc({ userId: employeeId, docType }));
     
     // success re - fetch 
     if (result.type.endsWith('fulfilled')) {
+    // delay refresh
+    setTimeout(() => {
       dispatch(fetchVisaInProgress());
       dispatch(fetchAllVisa());
+      setIsProcessing(false);
+        }, 500);
+    } else {
+        setIsProcessing(false);
     }
   };
 
   //reject doc 
   const handleRejectDoc = async (employeeId, docType) => {
+    if (isProcessing) return; 
+
     const feedback = prompt('Please enter rejection reason');
     if (!feedback) return;
 
     const result = await dispatch(rejectVisaDoc({ userId: employeeId, docType, feedback }));
     
     if (result.type.endsWith('fulfilled')) {
-      dispatch(fetchVisaInProgress());
-      dispatch(fetchAllVisa());
+        setTimeout(() => {
+        dispatch(fetchVisaInProgress());
+        dispatch(fetchAllVisa());
+        setIsProcessing(false);
+        }, 500);
+    } else {
+        setIsProcessing(false);
     }
   };
 
@@ -182,18 +198,20 @@ export default function VisaManagement() {
                                   item.employee.user._id,
                                   item.currentDoc.type
                                 )}
-                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                disabled={isProcessing} 
+                               className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                               >
-                                Approve
+                                 {isProcessing ? 'Processing...' : 'Approve'}
                               </button>
                               <button
                                 onClick={() => handleRejectDoc(
                                   item.employee.user._id,
                                   item.currentDoc.type
                                 )}
-                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                                 disabled={isProcessing}
+                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                               >
-                                Reject
+                                 {isProcessing ? 'Processing...' : 'Reject'}
                               </button>
                             </>
                           )}
@@ -202,9 +220,10 @@ export default function VisaManagement() {
                               item.employee.user._id,
                               item.employee.user.email
                             )}
-                            className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                          >
-                            Remind
+                             disabled={isProcessing}
+                           className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                            {isProcessing ? 'Sending...' : 'Remind'}
                           </button>
                         </div>
                       </td>

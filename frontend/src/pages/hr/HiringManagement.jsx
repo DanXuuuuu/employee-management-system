@@ -15,13 +15,14 @@ export default function HiringManagement() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   //   effects  
   // fetch data when loading page
   useEffect(() => {
     dispatch(fetchTokenHistory());
     dispatch(fetchOnboardingApplications());
-  }, [dispatch]);
+  }, []);
 
   // dealwith success message 
   useEffect(() => {
@@ -55,6 +56,8 @@ export default function HiringManagement() {
     if (result.type.endsWith('fulfilled')) {
       setEmail('');
       setName('');
+    //   only refresh token history, not refresh applications
+      dispatch(fetchTokenHistory());
     } else {
       setMessage(result.payload || 'Failed to send invitation');
     }
@@ -62,25 +65,49 @@ export default function HiringManagement() {
 
   // approve 
   const handleApprove = async (id) => {
+    // avoid repeat click 
+    if (isProcessing) return; 
+
+    setIsProcessing(true);
     const result = await dispatch(approveApplication(id));
     
-    if (result.type.endsWith('fulfilled')) {
-      // re fetch list 
-      dispatch(fetchOnboardingApplications());
+     if (result.type.endsWith('fulfilled')) {
+      // delay refresh 
+      setTimeout(() => {
+        dispatch(fetchOnboardingApplications());
+        setIsProcessing(false);
+      }, 500);
+    } else {
+      setIsProcessing(false);
     }
+  
   };
 
   // reject 
   const handleReject = async (id) => {
+    if (isProcessing) return;
+    
     const feedback = prompt('Please enter rejection reason:');
     if (!feedback) return;
 
+    setIsProcessing(true);
     const result = await dispatch(rejectApplication({ id, feedback }));
     
     if (result.type.endsWith('fulfilled')) {
-      dispatch(fetchOnboardingApplications());
+      setTimeout(() => {
+        dispatch(fetchOnboardingApplications());
+        setIsProcessing(false);
+      }, 500);
+    } else {
+      setIsProcessing(false);
     }
   };
+//   avoid quickly click view applications 
+   const handleViewApplication = (emp, action) => {
+    if (isProcessing || loading.hiring) return;
+    setSelectedApplication({ ...emp, _action: action });
+  };
+
 
   return (
     <div className="p-6">
@@ -215,10 +242,11 @@ export default function HiringManagement() {
                     <p className="font-medium">{emp.firstName} {emp.lastName}</p>
                     <p className="text-xs text-gray-500">{emp.user?.email}</p>
                     <button
-                      onClick={() => setSelectedApplication({ ...emp, _action: 'pending' })}
-                      className="text-blue-600 hover:underline text-xs mt-1"
+                      onClick={() => handleViewApplication(emp, 'pending')}
+                      disabled={isProcessing || loading.hiring}
+                      className="text-blue-600 hover:underline text-xs mt-1 disabled:text-gray-400 disabled:cursor-not-allowed"
                     >
-                      View Application
+                      {isProcessing ? 'Loading...' : 'View Application'}
                     </button>
                   </div>
                 ))
@@ -381,18 +409,19 @@ export default function HiringManagement() {
                   handleApprove(selectedApplication._id);
                   setSelectedApplication(null);
                 }}
-                className="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600"
+                disabled={isProcessing}
+                className="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                Approve
+                 {isProcessing ? 'Processing...' : 'Approve'}
               </button>
               <button
                 onClick={() => {
                   handleReject(selectedApplication._id);
                   setSelectedApplication(null);
                 }}
-                className="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600"
-              >
-                Reject
+                disabled={isProcessing}
+               className="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                {isProcessing ? 'Processing...' : 'Reject'} 
               </button>
             </div>
           )}

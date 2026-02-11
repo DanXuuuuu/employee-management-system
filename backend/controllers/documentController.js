@@ -1,5 +1,6 @@
 const Document = require("../models/Document");
 const Employee = require('../models/Employee');
+const upload = require('../uploads/upload');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,6 +12,8 @@ const ALLOWED_TYPES = [
   "Driver License",
   "Work Authorization",
 ];
+
+
 
 /**
  * GET /api/documents
@@ -36,6 +39,8 @@ exports.getMyDocuments = async (req, res, next) => {
  * - type: string
  * - file: file
  */
+ 
+
 exports.uploadDocument = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -133,3 +138,159 @@ exports.reuploadDocument = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * GET /api/documents/download/:id
+ */
+// employee could download docs, hr also do
+
+exports.downloadDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    // 1. 查找文档
+    const doc = await Document.findById(id);
+    if (!doc) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Document not found." 
+      });
+    }
+
+    // 2. 权限检查
+    const isOwner = doc.owner.toString() === userId.toString();
+    const isHR = userRole === 'HR';
+
+    if (!isOwner && !isHR) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You don't have permission to access this document." 
+      });
+    }
+
+    // 3. 构建文件路径
+    const filePath = path.join(__dirname, '../uploads', doc.fileKey);
+
+    // 4. 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "File not found on server." 
+      });
+    }
+
+    // 5. 发送文件
+    res.download(filePath, doc.fileName, (err) => {
+      if (err) {
+        console.error('Download error:', err);
+        return res.status(500).json({ 
+          success: false, 
+          message: "Error downloading file." 
+        });
+      }
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// preview doc /**
+// GET /api/documents/preview/:id
+ 
+exports.previewDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    // 1. 查找文档
+    const doc = await Document.findById(id);
+    if (!doc) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Document not found." 
+      });
+    }
+
+    // 2. 权限检查
+    const isOwner = doc.owner.toString() === userId.toString();
+    const isHR = userRole === 'HR';
+
+    if (!isOwner && !isHR) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You don't have permission to access this document." 
+      });
+    }
+
+    // 3. 构建文件路径
+    const filePath = path.join(__dirname, '../uploads', doc.fileKey);
+
+    // 4. 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "File not found on server." 
+      });
+    }
+
+    // 5. 设置正确的 Content-Type
+    const ext = path.extname(doc.fileName).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    if (ext === '.pdf') {
+      contentType = 'application/pdf';
+    } else if (['.jpg', '.jpeg'].includes(ext)) {
+      contentType = 'image/jpeg';
+    } else if (ext === '.png') {
+      contentType = 'image/png';
+    }
+
+    // 6. 设置为 inline 预览
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${doc.fileName}"`);
+    
+    // 7. 发送文件流
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+/**
+ * GET /api/documents/employee/:employeeId
+ */
+
+// hr fetch the specifci employee of docs
+exports.getEmployeeDocuments = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+
+    // 1. 查找 Employee
+    const employee = await Employee.findById(employeeId).populate('documents');
+    
+    if (!employee) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Employee not found." 
+      });
+    }
+
+    // 2. 返回该 Employee 的所有文档
+    res.json({
+      success: true,
+      data: employee.documents
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
