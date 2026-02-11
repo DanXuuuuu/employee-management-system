@@ -51,7 +51,7 @@ exports.approveOnboarding = async (req, res, next) => {
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
       { applicationStatus: 'APPROVED', hrFeedback: '' },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!employee) {
@@ -84,7 +84,7 @@ exports.rejectOnboarding = async (req, res, next) => {
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
       { applicationStatus: 'REJECTED', hrFeedback: feedback },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!employee) {
